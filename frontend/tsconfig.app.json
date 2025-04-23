@@ -22,11 +22,14 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-     /* ✅ Fix JS import errors */
+    /* ✅ Fix JS import errors */
     "allowJs": true,
     "checkJs": false,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    /* ✅ Add support for Jest */
+    "types": ["jest", "node"]
   },
-  "include": ["src"]
+  "include": ["src", "tests", "src/__tests__"]
 }
