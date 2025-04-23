@@ -20,7 +20,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+     /* ✅ Fix JS import errors */
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

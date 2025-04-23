@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas import TaskRequest, TaskResponse, TaskStatusResponse, TaskSummaryResponse
-from app.utils.model_router import route_task_to_model
-from app.models import SessionLocal, Task
+from backend.app.schemas import TaskRequest, TaskResponse, TaskStatusResponse, TaskSummaryResponse
+from backend.app.utils.model_router import route_task_to_model
+from backend.app.models import SessionLocal, Task
 from typing import List
 import requests
 
@@ -16,8 +16,22 @@ async def create_task(task: TaskRequest):
     db = SessionLocal()
 
     try:
-        # MOCK the generated_code without real external call
-        generated_code = f"// Mock generated code for: {task.description}"
+        # Send request to DeepSeek to generate code
+        response = requests.post(
+            "http://127.0.0.1:11434/api/generate",
+            json={
+                "model": model_name,
+                "prompt": task.description,
+                "stream": False
+            },
+            timeout=60
+        )
+
+        if response.status_code == 200:
+            generated = response.json()
+            generated_code = generated.get("response", "").strip()
+        else:
+            raise HTTPException(status_code=500, detail="Model generation failed.")
 
         # Save task into database
         db_task = Task(
@@ -36,10 +50,14 @@ async def create_task(task: TaskRequest):
             generated_code=db_task.generated_code
         )
 
+    except requests.RequestException as e:
+        print(f"Error communicating with model server: {e}")
+        raise HTTPException(status_code=500, detail="Failed to connect to model server.")
+
     finally:
         db.close()
 
-# IMPORTANT: /status/all FIRST before /status/{task_id}
+# Make sure /status/all is registered before /status/{task_id}
 @router.get("/status/all", response_model=List[TaskStatusResponse])
 async def get_all_tasks():
     db = SessionLocal()
@@ -83,7 +101,7 @@ async def retry_task(task_id: int):
         if not db_task:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        # Re-send the original description to DeepSeek
+        # Retry task through DeepSeek again
         response = requests.post(
             "http://127.0.0.1:11434/api/generate",
             json={
@@ -93,25 +111,24 @@ async def retry_task(task_id: int):
             },
             timeout=60
         )
+
         if response.status_code == 200:
             generated = response.json()
             generated_code = generated.get("response", "").strip()
-
-            # Update task in database
-            db_task.generated_code = generated_code
-            db_task.status = "completed"
-            db.commit()
-            db.refresh(db_task)
-
-            return TaskResponse(
-                task_id=db_task.id,
-                status=db_task.status,
-                generated_code=db_task.generated_code
-            )
-
         else:
-            print(f"Model returned error: {response.text}")
             raise HTTPException(status_code=500, detail="Model generation failed during retry.")
+
+        # Update task
+        db_task.generated_code = generated_code
+        db_task.status = "completed"
+        db.commit()
+        db.refresh(db_task)
+
+        return TaskResponse(
+            task_id=db_task.id,
+            status=db_task.status,
+            generated_code=db_task.generated_code
+        )
 
     except requests.RequestException as e:
         print(f"Error reconnecting to DeepSeek: {e}")
