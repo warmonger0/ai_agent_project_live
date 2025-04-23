@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  deepseek-ollama:
+    build: .
+    container_name: deepseek-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./models:/models
+    networks:
+      - isolated
+    restart: unless-stopped
+
+networks:
+  isolated:
+    driver: bridge
