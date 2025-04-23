@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from backend.app.controllers.logs_controller import router as logs_router
 
 # Import routers
 from backend.app.controllers import health_controller, task_controller
@@ -26,3 +27,5 @@ app.include_router(task_controller.router)
 @app.get("/")
 async def root():
     return {"message": "Local AI Agent Brain Running"}
+
+app.include_router(logs_router)
