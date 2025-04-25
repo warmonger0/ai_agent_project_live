@@ -2,11 +2,15 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.controllers import healing_controller
 
 # Import routers
-from app.controllers import health_controller, task_controller
+from app.controllers import (
+    health_controller,
+    task_controller,
+    healing_controller,
+)
 from app.controllers.logs_controller import router as logs_router
+from app.controllers.plugin_controller import router as plugin_router  # ✅ FIXED
 
 # Create FastAPI app instance
 app = FastAPI()
@@ -29,6 +33,7 @@ app.include_router(health_controller.router)
 app.include_router(task_controller.router)
 app.include_router(logs_router)
 app.include_router(healing_controller.router)
+app.include_router(plugin_router)  # ✅ FIXED
 
 # ----------------------------------------
 # Root Route
@@ -37,15 +42,15 @@ app.include_router(healing_controller.router)
 async def root():
     return {"message": "Local AI Agent Brain Running"}
 
-
+# ----------------------------------------
+# App Startup: Healing Loop + DB Init
+# ----------------------------------------
 from app.db import engine, Base
 from app.services.healing_loop import healing_loop
 import asyncio
 
-# Run healing loop on startup
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(healing_loop())
 
-# Create tables if they don't exist
 Base.metadata.create_all(bind=engine)

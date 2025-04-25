@@ -45,10 +45,10 @@ const TaskTable = () => {
           </thead>
           <tbody>
             {tasks.map((task: Task, index: number) => (
-              <tr key={task.task_id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-gray-100'}>
-                <td className="border px-6 py-4 text-sm text-gray-800">{task.task_id}</td>
-                <td className="border px-6 py-4 text-sm text-gray-800">{task.description}</td>
-                <td className="border px-6 py-4 text-sm text-gray-800">{task.status}</td>
+              <tr key={`task-${task.task_id}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-gray-100 transition'}>
+                <td className="border px-6 py-4 text-base leading-6 text-gray-800">{task.task_id}</td>
+                <td className="border px-6 py-4 text-base leading-6 text-gray-800">{task.description}</td>
+                <td className="border px-6 py-4 text-base leading-6 text-gray-800">{task.status}</td>
               </tr>
             ))}
           </tbody>

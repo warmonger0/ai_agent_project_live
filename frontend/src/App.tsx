@@ -8,11 +8,14 @@ const App = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
-        <nav className="bg-white shadow p-4 flex space-x-4">
-          <Link to="/tasks" className="text-blue-500">Tasks</Link>
-          <Link to="/health" className="text-blue-500">System Health</Link>
-          <Link to="/deployments" className="text-blue-500">Deployment Logs</Link>
-        </nav>
+          <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
+            <div className="max-w-6xl mx-auto flex space-x-6">
+              <Link to="/tasks" className="text-indigo-600 font-medium hover:text-indigo-800">Tasks</Link>
+              <Link to="/health" className="text-indigo-600 font-medium hover:text-indigo-800">System Health</Link>
+              <Link to="/deployments" className="text-indigo-600 font-medium hover:text-indigo-800">Deployment Logs</Link>
+            </div>
+          </nav>
+
         <Routes>
           {/* Add default route redirect */}
           <Route path="/" element={<Navigate to="/tasks" replace />} />

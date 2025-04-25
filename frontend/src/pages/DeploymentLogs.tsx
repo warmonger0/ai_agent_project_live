@@ -22,8 +22,7 @@ const DeploymentLogs: React.FC = () => {
     } finally {
       setLoadingLogs(false);
     }
-  };
-  
+  };  
 
   const fetchLogContent = async (filename: string) => {
     setLoadingContent(true);
