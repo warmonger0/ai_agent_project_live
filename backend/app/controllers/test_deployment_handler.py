@@ -1,6 +1,6 @@
 # backend/app/controllers/test_deployment_handler.py
 
-from deployment_handler import DeploymentHandler
+from app.controllers.deployment_handler import DeploymentHandler
 import os
 import json
 from datetime import datetime

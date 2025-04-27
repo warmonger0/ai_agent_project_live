@@ -3,7 +3,7 @@
 import os
 import json
 from datetime import datetime
-from backend.app.controllers.ssh_client import SSHClientManager
+from app.controllers.ssh_client import SSHClientManager
 from typing import Dict
 
 class DeploymentHandler:

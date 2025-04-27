@@ -7,6 +7,7 @@ from typing import Dict, List, Any
 
 PLUGIN_DIR = os.path.dirname(__file__)
 
+
 def discover_plugins() -> List[Dict[str, Any]]:
     plugins = []
 
@@ -33,9 +34,13 @@ def discover_plugins() -> List[Dict[str, Any]]:
 
     return plugins
 
-def run_plugin(plugin_name: str, input_text: str) -> str:
-    runner_path = os.path.join(PLUGIN_DIR, "plugin_runner.py")
-    plugin_path = os.path.join(PLUGIN_DIR, f"{plugin_name}.py")
+
+def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> str:
+    if plugin_dir is None:
+        plugin_dir = os.path.dirname(__file__)
+
+    runner_path = os.path.abspath(os.path.join(plugin_dir, "plugin_runner.py"))
+    plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
 
     if not os.path.isfile(plugin_path):
         raise FileNotFoundError(f"Plugin '{plugin_name}' not found")
@@ -45,8 +50,8 @@ def run_plugin(plugin_name: str, input_text: str) -> str:
             ["python3", runner_path, plugin_name, input_text],
             capture_output=True,
             text=True,
-            cwd=PLUGIN_DIR,
-            timeout=5
+            timeout=5,
+            cwd=plugin_dir  # ✅ run from specified plugin_dir
         )
         if result.returncode != 0:
             raise RuntimeError("Plugin process failed")
