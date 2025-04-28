@@ -18,9 +18,13 @@ def discover_plugins() -> List[Dict[str, Any]]:
         path = os.path.join(PLUGIN_DIR, filename)
         name = filename[:-3]
 
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        try:
+            spec = importlib.util.spec_from_file_location(name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as e:
+            print(f"⚠️ Skipping plugin '{name}' due to import error: {e}")
+            continue
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
@@ -35,7 +39,7 @@ def discover_plugins() -> List[Dict[str, Any]]:
     return plugins
 
 
-def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> str:
+def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
     if plugin_dir is None:
         plugin_dir = os.path.dirname(__file__)
 
@@ -43,7 +47,7 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> str
     plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
 
     if not os.path.isfile(plugin_path):
-        raise FileNotFoundError(f"Plugin '{plugin_name}' not found")
+        return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
     try:
         result = subprocess.run(
@@ -51,15 +55,27 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> str
             capture_output=True,
             text=True,
             timeout=5,
-            cwd=plugin_dir  # ✅ run from specified plugin_dir
+            cwd=plugin_dir,
         )
-        if result.returncode != 0:
-            raise RuntimeError("Plugin process failed")
 
-        output = json.loads(result.stdout)
+        if result.returncode != 0:
+            stderr = result.stderr.strip() or "Unknown error."
+            return {"ok": False, "error": f"Plugin process failed: {stderr}"}
+
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            return {"ok": False, "error": f"Invalid plugin output (not JSON): {e}"}
+
         if "error" in output:
-            raise ValueError(output["error"])
-        return output["result"]
+            return {"ok": False, "error": f"Plugin error: {output['error']}"}
+
+        if "result" not in output:
+            return {"ok": False, "error": "Plugin returned invalid output: missing 'result' key."}
+
+        return {"ok": True, "result": output["result"]}
 
     except subprocess.TimeoutExpired:
-        raise RuntimeError("Plugin execution timed out")
+        return {"ok": False, "error": "Plugin execution timed out."}
+    except Exception as e:
+        return {"ok": False, "error": f"Unexpected error: {str(e)}"}
