@@ -4,10 +4,19 @@ import importlib.util
 import inspect
 import subprocess
 import json
+import resource  # 👈 Added for sandboxing
+import signal    # 👈 Added for signal detection
 from typing import Dict, List, Any
 
 PLUGIN_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../../"))
+
+def set_limits():
+    # Limit CPU time (seconds)
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))  # Max 2 seconds of CPU time
+    # Limit address space (memory usage) to 200 MB
+    mem_limit = 200 * 1024 * 1024  # 200MB
+    resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
 
 def discover_plugins() -> List[Dict[str, Any]]:
     plugins = []
@@ -55,8 +64,19 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
             text=True,
             timeout=5,
             cwd=plugin_dir,
-            env=env,  # 👈 ADD THIS
+            env=env,
+            preexec_fn=set_limits,  # 👈 Added CPU/memory limits
         )
+
+        # --- New: detect if plugin was killed by signal ---
+        if result.returncode < 0:
+            signal_num = -result.returncode
+            if signal_num == signal.SIGKILL:
+                return {"ok": False, "error": "Plugin terminated: Killed (possible Out of Memory)"}
+            elif signal_num == signal.SIGXCPU:
+                return {"ok": False, "error": "Plugin terminated: CPU time limit exceeded"}
+            else:
+                return {"ok": False, "error": f"Plugin terminated by signal {signal_num}"}
 
         if result.returncode != 0:
             stderr = result.stderr.strip() or "Unknown error."
