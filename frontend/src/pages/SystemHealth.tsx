@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 interface HealthResponse {
   backend: string;
@@ -8,17 +8,18 @@ interface HealthResponse {
 
 const SystemHealth: React.FC = () => {
   const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHealth = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await axios.get('/health');
+      const res = await axios.get<HealthResponse>("/health"); // ✅ Type API response
       setHealth(res.data);
       setError(null);
-    } catch (e) {
-      setError('Failed to fetch health status');
+    } catch (err: unknown) {
+      console.error("Health fetch error:", err); // ✅ Always log unknown
+      setError("Failed to fetch health status");
       setHealth(null);
     } finally {
       setLoading(false);
@@ -55,12 +56,15 @@ const SystemHealth: React.FC = () => {
   );
 };
 
-const HealthItem: React.FC<{ label: string; status: string }> = ({ label, status }) => {
-  const color =
-    status.toLowerCase() === 'ok' ? 'text-green-600' : 'text-red-600';
+const HealthItem: React.FC<{ label: string; status: string }> = ({
+  label,
+  status,
+}) => {
+  const colorClass =
+    status.trim().toLowerCase() === "ok" ? "text-green-600" : "text-red-600";
 
   return (
-    <p className={color}>
+    <p className={colorClass}>
       {label}: <span className="font-semibold">{status}</span>
     </p>
   );

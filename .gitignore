@@ -1,18 +1,39 @@
 # Python
 __pycache__/
 *.py[cod]
-*.log
 *.sqlite3
 *.db
+*.log
 
-# Environments
+# Environment + Config
 .env
 .venv/
 venv/
+.healing.log
+database.db
 
 # Node
 node_modules/
 dist/
+.postcssrc
+tailwind.config.js
 
-# Pytest
+# Testing
 .pytest_cache/
+tests/unit/__pycache__/
+tests/integration/__pycache__/
+
+# VS Code
+.vscode/
+
+# System & Editor Junk
+.DS_Store
+Thumbs.db
+
+# Optional backups
+*.bak
+*.swp
+*.swo
+
+# Deployment & logs
+/deployments/logs/

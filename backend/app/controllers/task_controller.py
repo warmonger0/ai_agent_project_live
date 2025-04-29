@@ -1,83 +1,95 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+from app.db import get_db  # ✅ Now imported from shared db.py
+from app.services import task_db
 from app.models import Task, PluginExecution
-from app.db import SessionLocal
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 router = APIRouter()
-
-# --- DB session dependency ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # --- Pydantic input model for new task creation ---
 class TaskCreate(BaseModel):
     description: str
     model_used: str
 
-# --- Insert a new task ---
-@router.post("/task")
+
+# --- TASK ROUTES ---
+
+@router.post("/tasks", response_model=dict)
 def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
-    new_task = Task(
-        description=task_data.description,
-        model_used=task_data.model_used,
-        status="pending"
-    )
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-    return new_task
+    task = task_db.create_task(db, description=task_data.description, model_used=task_data.model_used)
+    return {
+        "id": task.id,
+        "status": task.status,
+        "created_at": task.created_at
+    }
 
-# --- Get all tasks ---
-@router.get("/status/all")
+
+@router.get("/tasks", response_model=List[dict])
 def get_all_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+    tasks = task_db.get_all_tasks(db)
+    return [
+        {
+            "id": t.id,
+            "description": t.description,
+            "model_used": t.model_used,
+            "status": t.status,
+            "created_at": t.created_at,
+            "completed_at": t.completed_at,
+        }
+        for t in tasks
+    ]
 
-# --- Get task by ID ---
-@router.get("/status/{task_id}")
-def get_task_by_id(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+
+@router.get("/tasks/{task_id}", response_model=dict)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    task = task_db.get_task(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return {
-        "task_id": task.id,
+        "id": task.id,
         "description": task.description,
-        "status": task.status
+        "model_used": task.model_used,
+        "status": task.status,
+        "created_at": task.created_at,
+        "completed_at": task.completed_at,
     }
 
-# --- Retry a failed task by ID ---
-@router.post("/retry/{task_id}")
-def retry_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+
+@router.patch("/tasks/{task_id}", response_model=dict)
+def update_task(task_id: int, status: str, error_message: Optional[str] = None, db: Session = Depends(get_db)):
+    task = task_db.update_task_status(
+        db, task_id, status=status,
+        error_message=error_message,
+        completed=(status in ["success", "error"])
+    )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    if task.status != "failed":
-        raise HTTPException(status_code=400, detail="Only failed tasks can be retried")
+    return {
+        "id": task.id,
+        "status": task.status,
+        "error_message": task.error_message,
+        "completed_at": task.completed_at,
+    }
 
-    task.status = "pending"
-    db.commit()
+
+@router.post("/retry/{task_id}")
+def retry_task(task_id: int, db: Session = Depends(get_db)):
+    task = task_db.get_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.status != "error":
+        raise HTTPException(status_code=400, detail="Only errored tasks can be retried")
+    task = task_db.update_task_status(db, task_id, status="pending", error_message=None, completed=False)
     return {"message": f"Task {task_id} status set to pending."}
 
-# --- Store a plugin execution record ---
-def store_plugin_execution(plugin_name: str, input_data: Dict[str, Any], output_data: Dict[str, Any], status: str, db: Session):
-    execution = PluginExecution(
-        plugin_name=plugin_name,
-        input_data=input_data,
-        output_data=output_data,
-        status=status
-    )
-    db.add(execution)
-    db.commit()
 
-# --- Get plugin execution history ---
-@router.get("/plugin/history", response_model=List[Dict[str, Any]])
-def get_plugin_execution_history(db: Session = Depends(get_db)):
-    executions = db.query(PluginExecution).order_by(PluginExecution.timestamp.desc()).all()
+# --- PLUGIN EXECUTION HISTORY ---
+
+@router.get("/plugin-results", response_model=List[dict])
+def get_plugin_execution_history(plugin_name: Optional[str] = None, db: Session = Depends(get_db)):
+    executions = task_db.get_plugin_executions(db, plugin_name)
     return [
         {
             "id": e.id,
@@ -85,7 +97,9 @@ def get_plugin_execution_history(db: Session = Depends(get_db)):
             "input_data": e.input_data,
             "output_data": e.output_data,
             "status": e.status,
-            "timestamp": e.timestamp
+            "timestamp": e.timestamp,
+            "completed_at": e.completed_at,
+            "error_message": e.error_message
         }
         for e in executions
     ]

@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import PluginForm from "../components/PluginForm";
+import PluginForm, { PluginInputSpec } from "../components/PluginForm"; // ✅ Import both
 
 describe("PluginForm", () => {
-  const mockSpec = [
+  const mockSpec: PluginInputSpec[] = [
     { name: "input1", label: "Text Field", type: "text", required: true },
     { name: "count", label: "Count", type: "number" },
     { name: "toggle", label: "Enable", type: "boolean" },
@@ -18,7 +18,7 @@ describe("PluginForm", () => {
         inputSpec={mockSpec}
         onSubmit={mockSubmit}
         status="idle"
-      />
+      />,
     );
   });
 
@@ -29,15 +29,18 @@ describe("PluginForm", () => {
   });
 
   it("submits form with input values", () => {
-    fireEvent.change(screen.getByLabelText("Text Field"), { target: { value: "test input" } });
-    fireEvent.change(screen.getByLabelText("Count"), { target: { value: 42 } });
+    fireEvent.change(screen.getByLabelText("Text Field"), {
+      target: { value: "test input" },
+    });
+    fireEvent.change(screen.getByLabelText("Count"), {
+      target: { value: "42" },
+    });
     fireEvent.click(screen.getByLabelText("Enable"));
-
     fireEvent.click(screen.getByText("Run Plugin"));
 
     expect(mockSubmit).toHaveBeenCalledWith({
       input1: "test input",
-      count: "42",
+      count: 42,
       toggle: true,
     });
   });

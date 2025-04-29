@@ -1,6 +1,6 @@
-import api from './api';
+import api from "./api";
 
 export const fetchDeploymentLogs = async () => {
-  const response = await api.get('/logs');
+  const response = await api.get("/logs");
   return response.data;
 };

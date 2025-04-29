@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const DeploymentLogs: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
@@ -12,28 +12,28 @@ const DeploymentLogs: React.FC = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await axios.get('/logs');
-      console.log("LOGS RESPONSE:", response.data); // ✅ Add this line
-      setLogs(response.data); // This line assumes data is a string[]
+      const response = await axios.get<string[]>("/logs");
+      console.log("LOGS RESPONSE:", response.data);
+      setLogs(response.data);
       setError(null);
-    } catch (err) {
-      console.error("Failed to load logs:", err);
-      setError('Failed to load logs.');
+    } catch (error) {
+      console.error("Failed to load logs:", error);
+      setError("Failed to load logs.");
     } finally {
       setLoadingLogs(false);
     }
-  };  
+  };
 
   const fetchLogContent = async (filename: string) => {
     setLoadingContent(true);
     try {
       const response = await axios.get(`/logs/${filename}`, {
-        responseType: 'text',
+        responseType: "text",
       });
       setSelectedLog(filename);
       setLogContent(response.data);
-    } catch (err) {
-      setError('Failed to load log content.');
+    } catch {
+      setError("Failed to load log content.");
     } finally {
       setLoadingContent(false);
     }
@@ -81,13 +81,15 @@ const DeploymentLogs: React.FC = () => {
           <div className="md:col-span-2">
             {selectedLog && (
               <>
-                <h2 className="font-semibold mb-2">Contents of: {selectedLog}</h2>
+                <h2 className="font-semibold mb-2">
+                  Contents of: {selectedLog}
+                </h2>
                 <pre className="bg-gray-100 p-4 rounded overflow-x-auto text-sm whitespace-pre-wrap max-h-[60vh]">
                   {loadingContent
-                    ? 'Loading log content...'
-                    : typeof logContent === 'string' && logContent.trim()
-                    ? logContent
-                    : 'Log file is empty or failed to load.'}
+                    ? "Loading log content..."
+                    : logContent?.trim()
+                      ? logContent
+                      : "Log file is empty or failed to load."}
                 </pre>
               </>
             )}
