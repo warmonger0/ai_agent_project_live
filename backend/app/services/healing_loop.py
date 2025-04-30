@@ -18,6 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL = 15  # seconds
+HEALTH_URL = "http://localhost:8000/api/v1/health"  # ✅ Updated path
 
 async def healing_loop():
     while True:
@@ -26,7 +27,7 @@ async def healing_loop():
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get("http://localhost:8000/health")
+                response = await client.get(HEALTH_URL)
                 if response.status_code == 200:
                     logger.info("✅ Health check passed.")
                     continue  # No need to heal if system is healthy

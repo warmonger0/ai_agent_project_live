@@ -1,17 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings  # ✅ Import config
+from app.core.config import settings
+from app.api.v1 import api_router  # ✅ Versioned router
 
-# Import routers
-from app.controllers import (
-    health_controller,
-    task_controller,
-    healing_controller,
-)
-from app.controllers.logs_controller import router as logs_router
-from app.controllers.plugin_controller import router as plugin_router
-
-# Import DB + Healing
 from app.db import engine, Base
 from app.services.healing_loop import healing_loop
 import asyncio
@@ -39,13 +30,9 @@ app.add_middleware(
 )
 
 # ----------------------------------------
-# API Route Registration
+# Versioned API Registration
 # ----------------------------------------
-app.include_router(health_controller.router)
-app.include_router(task_controller.router)
-app.include_router(logs_router)
-app.include_router(healing_controller.router)
-app.include_router(plugin_router)
+app.include_router(api_router, prefix="/api/v1")
 
 # ----------------------------------------
 # Root Route
