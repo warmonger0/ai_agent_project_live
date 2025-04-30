@@ -6,7 +6,7 @@ import subprocess
 import json
 import resource
 import signal
-from typing import Dict, List, Any, Type
+from typing import Dict, List, Any, Type  # noqa: F401 # used in plugin typing and interface
 
 PLUGIN_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../../"))
@@ -18,7 +18,7 @@ def set_limits():
     mem_limit = 200 * 1024 * 1024  # 200MB
     resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
 
-def discover_plugins() -> List[Dict[str, Any]]:
+def discover_plugins() -> List[Dict[str, Any]]:  # noqa: ANN401
     plugins = []
     for filename in os.listdir(PLUGIN_DIR):
         if not filename.endswith(".py") or filename.startswith("_"):
@@ -73,7 +73,7 @@ def load_plugin_class(plugin_name: str) -> Type:
     print("❌ No valid plugin class found.")
     raise ImportError(f"No valid plugin class found in '{filename}'.")
 
-def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
+def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:  # noqa: ANN401
     if plugin_dir is None:
         plugin_dir = os.path.dirname(__file__)
 

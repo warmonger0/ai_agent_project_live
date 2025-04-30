@@ -5,7 +5,7 @@ from app.db import tasks as task_db  # ✅ from db/tasks.py
 from app.db.tasks import add_memory_entry  # ✅ Chat 11 memory ledger hook
 from app.models import Task, PluginExecution
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional  # noqa: ANN401
 import json
 
 router = APIRouter()
