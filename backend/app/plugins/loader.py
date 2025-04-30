@@ -4,9 +4,9 @@ import importlib.util
 import inspect
 import subprocess
 import json
-import resource  # 👈 Added for sandboxing
-import signal    # 👈 Added for signal detection
-from typing import Dict, List, Any
+import resource
+import signal
+from typing import Dict, List, Any, Type
 
 PLUGIN_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../../"))
@@ -43,6 +43,36 @@ def discover_plugins() -> List[Dict[str, Any]]:
                 })
     return plugins
 
+def load_plugin_class(plugin_name: str) -> Type:
+    import pprint
+    filename = f"{plugin_name}.py"
+    plugin_path = os.path.join(PLUGIN_DIR, filename)
+
+    print(f"\n🔍 Trying to load plugin: {plugin_name}")
+    print(f"🔍 Plugin path: {plugin_path}")
+
+    if not os.path.isfile(plugin_path):
+        print("❌ Plugin file not found.")
+        raise ImportError(f"Plugin file '{filename}' not found.")
+
+    spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    print(f"📦 Attributes in {plugin_name}.py:")
+    pprint.pprint(dir(module))
+
+    for attr_name in dir(module):
+        attr = getattr(module, attr_name)
+        if inspect.isclass(attr):
+            print(f"🔎 Found class: {attr.__name__}")
+            if hasattr(attr, "run") and callable(attr.run):
+                print(f"✅ Matched class: {attr.__name__}")
+                return attr
+
+    print("❌ No valid plugin class found.")
+    raise ImportError(f"No valid plugin class found in '{filename}'.")
+
 def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
     if plugin_dir is None:
         plugin_dir = os.path.dirname(__file__)
@@ -54,7 +84,6 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
         return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
     env = os.environ.copy()
-    # ✅ Safely inject PROJECT_ROOT into PYTHONPATH
     existing_path = env.get("PYTHONPATH", "")
     if PROJECT_ROOT not in existing_path:
         env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + existing_path
@@ -70,7 +99,6 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
             preexec_fn=set_limits,
         )
 
-        # --- Detect if plugin was killed by signal ---
         if result.returncode < 0:
             signal_num = -result.returncode
             if signal_num == signal.SIGKILL:

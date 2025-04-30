@@ -6,8 +6,8 @@ import json
 
 from app.db.session import get_db
 from app.db.tasks import add_memory_entry
-from app.plugins.loader import discover_plugins
-from app.plugins.runner import run_plugin_job  # ✅ Correct import
+from app.plugins.loader import discover_plugins, load_plugin_class
+from app.plugins.runner import run_plugin_job
 from app.models import PluginExecution
 from app.core.api_response import success_response
 
@@ -25,6 +25,26 @@ def list_plugins():
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to list plugins: {str(e)}")
+
+# --- Get plugin input spec ---
+@router.get("/plugins/{plugin_name}/spec")
+def get_plugin_spec(plugin_name: str):
+    try:
+        plugin_class = load_plugin_class(plugin_name)
+
+        if not hasattr(plugin_class, "input_spec"):
+            raise HTTPException(status_code=404, detail="input_spec not defined for plugin.")
+
+        return success_response({
+            "plugin": plugin_name,
+            "input_spec": plugin_class.input_spec
+        })
+
+    except ImportError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to load plugin spec: {str(e)}")
 
 # --- Run a plugin ---
 @router.post("/plugins/run/{plugin_name}")
