@@ -16,11 +16,13 @@ const TaskTable = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const data = await fetchTasks();
-        console.log("Fetched tasks:", data);
-        setTasks(data);
+        const res = await fetchTasks();
+        const safeData = Array.isArray(res?.data) ? res.data : []; // 👈 handles { ok: true, data: [...] } or junk
+        console.log("✅ Loaded tasks:", safeData);
+        setTasks(safeData);
       } catch (error) {
-        console.error("Error loading tasks:", error);
+        console.error("❌ Error loading tasks:", error);
+        setTasks([]); // fallback to empty array
       } finally {
         setLoading(false);
       }
@@ -39,7 +41,7 @@ const TaskTable = () => {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6 text-center">Task Dashboard</h1>
       <Table headers={["ID", "Description", "Status"]}>
-        {tasks.map((task) => (
+        {(tasks || []).map((task) => (
           <TaskRow key={task.task_id} {...task} />
         ))}
       </Table>

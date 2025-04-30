@@ -25,7 +25,13 @@ export default function PluginHistory() {
     const loadHistory = async () => {
       try {
         const data = await fetchPluginHistory();
-        setHistory(data);
+        if (Array.isArray(data)) {
+          setHistory(data);
+        } else {
+          console.warn("Unexpected plugin history format:", data);
+          setHistory([]);
+        }
+        setError(null);
       } catch (err) {
         console.error("Error fetching plugin history:", err);
         setError("Failed to load plugin history.");

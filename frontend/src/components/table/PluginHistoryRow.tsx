@@ -1,14 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { PluginExecution } from "@/lib/types/plugin";
 
-interface PluginHistoryRowProps {
-  id: number;
-  plugin_name: string;
-  input_data: Record<string, any>;
-  output_data: Record<string, any>;
-  status: string;
-  timestamp: string;
+interface PluginHistoryRowProps extends Omit<PluginExecution, "input_data" | "output_data"> {
+  input_data: Record<string, unknown>;
+  output_data: Record<string, unknown>;
 }
 
 const PluginHistoryRow = ({

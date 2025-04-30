@@ -1,92 +1,62 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { fetchPlugins, runPlugin } from "@/lib/services/pluginService";
+import {
+  fetchPlugins,
+  fetchPluginSpec,
+  runPlugin,
+} from "@/lib/services/pluginService";
+
 import { PluginSpec } from "@/lib/types/plugin";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import PluginExecutionForm from "@/components/PluginExecutionForm";
+import PluginResult from "@/components/plugin/PluginResult";
 
 export default function PluginPanel() {
   const [plugins, setPlugins] = useState<PluginSpec[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [inputText, setInputText] = useState<string>("");
-  const [status, setStatus] = useState<
-    "idle" | "running" | "success" | "error"
-  >("idle");
   const [result, setResult] = useState<string | null>(null);
-
-  const inputRef = useRef<HTMLInputElement>(null);
-  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"idle" | "running" | "success" | "error">(
+    "idle"
+  );
 
   useEffect(() => {
     const loadPlugins = async () => {
       try {
         const data = await fetchPlugins();
-        setPlugins(data);
+        setPlugins(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch plugins:", err);
+        toast.error("Failed to load plugins.");
+        setPlugins([]);
       }
     };
     loadPlugins();
   }, []);
 
-  const handleRunPlugin = async () => {
-    if (!selected) return;
-    setStatus("running");
-    setResult(null);
-
-    try {
-      const finalResult = await runPlugin(selected, inputText);
-      setResult(
-        typeof finalResult === "object"
-          ? JSON.stringify(finalResult, null, 2)
-          : finalResult,
-      );
-      setStatus("success");
-      toast.success(`Plugin "${selected}" executed successfully!`);
-      window.dispatchEvent(new Event("plugin-executed"));
-    } catch (err) {
-      console.error("Error running plugin:", err);
-      setStatus("error");
-      toast.error(`Failed to execute plugin "${selected}".`);
-    }
-  };
-
   const handleSelectPlugin = (pluginName: string) => {
     setSelected(pluginName);
-    setInputText("");
     setResult(null);
     setStatus("idle");
-
-    inputContainerRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 300);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleCopyResult = async () => {
-    if (!result) return;
+  const handleExecute = async (pluginName: string, inputs: Record<string, unknown>) => {
+    setStatus("running");
+    setResult(null);
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(result);
-        toast.success("Copied result to clipboard!");
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = result;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        textarea.remove();
-        toast.success("Copied manually!");
-      }
-    } catch (error) {
-      console.error("Copy failed:", error);
-      toast.error("Failed to copy to clipboard.");
+      const res = await runPlugin(pluginName, inputs);
+      const formatted =
+        typeof res === "object" ? JSON.stringify(res, null, 2) : String(res);
+      setResult(formatted);
+      setStatus("success");
+      toast.success(`✅ "${pluginName}" plugin executed!`);
+      window.dispatchEvent(new Event("plugin-executed"));
+    } catch (err) {
+      console.error("Plugin execution failed:", err);
+      toast.error("❌ Failed to execute plugin.");
+      setStatus("error");
     }
   };
 
@@ -113,68 +83,19 @@ export default function PluginPanel() {
         </div>
 
         {selected && (
-          <div
-            ref={inputContainerRef}
-            className="space-y-4 mt-6 max-w-2xl mx-auto"
-            id="plugin-input-form"
-          >
-            <h3 className="text-lg font-medium text-center">
-              Input for: {selected}
-            </h3>
-
-            <Input
-              ref={inputRef}
-              placeholder="Enter input..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              disabled={status === "running"}
+          <div className="space-y-6">
+            <PluginExecutionForm
+              pluginName={selected}
+              fetchSpec={fetchPluginSpec}
+              onExecute={handleExecute}
+              loading={status === "running"}
             />
 
-            <div className="flex justify-center">
-              <Button onClick={handleRunPlugin} disabled={status === "running"}>
-                {status === "running" && (
-                  <svg
-                    className="animate-spin h-4 w-4 mr-2 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                )}
-                {status === "running" ? "Running..." : "Run Plugin"}
-              </Button>
-            </div>
-
-            {status === "success" && result && (
-              <div className="relative mt-6 bg-gray-100 rounded p-4 text-xs overflow-x-auto max-w-full">
-                <Button
-                  onClick={handleCopyResult}
-                  variant="secondary"
-                  size="sm"
-                  className="absolute top-2 right-2 text-xs"
-                >
-                  📋 Copy
-                </Button>
-                <pre className="whitespace-pre-wrap break-words">{result}</pre>
-              </div>
-            )}
+            {status === "success" && result && <PluginResult result={result} />}
 
             {status === "error" && (
-              <p className="mt-4 text-center text-red-600 font-semibold">
-                Error executing plugin.
+              <p className="text-center text-red-600 font-semibold">
+                ❌ Plugin execution failed.
               </p>
             )}
           </div>
