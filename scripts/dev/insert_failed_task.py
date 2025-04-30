@@ -1,4 +1,7 @@
-# insert_failed_task.py
+# ⚠️ DEV-ONLY SCRIPT
+# Purpose: Manually insert a failed task for testing healing logic.
+# Do not include in production deployments or automated pipelines.
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
