@@ -1,9 +1,9 @@
-# backend/app/controllers/deployment_handler.py
-
 import os
 import json
 from datetime import datetime
 from app.controllers.ssh_client import SSHClientManager
+from app.db.session import get_db_session  # ✅ For memory tracking
+from app.db.tasks import add_memory_entry  # ✅ Memory ledger log
 from typing import Dict
 
 class DeploymentHandler:
@@ -20,7 +20,8 @@ class DeploymentHandler:
         2. Upload file.
         3. Execute command.
         4. Save deployment result log.
-        5. Return clean result dict.
+        5. Write to memory ledger.
+        6. Return clean result dict.
         """
         ssh_manager = SSHClientManager(
             host=self.host,
@@ -47,7 +48,8 @@ class DeploymentHandler:
 
         finally:
             ssh_manager.close_connection()
-            self.save_deployment_log(result)  # <<== NEW: Always save deployment log
+            self.save_deployment_log(result)
+            self.write_to_memory_ledger(result, remote_path, run_command)
 
         return result
 
@@ -65,3 +67,12 @@ class DeploymentHandler:
             json.dump(result, log_file, indent=4)
 
         print(f"Deployment log saved to: {log_filename}")
+
+    def write_to_memory_ledger(self, result: dict, remote_path: str, command: str):
+        """
+        Add deployment result to memory ledger.
+        """
+        db = get_db_session()
+        context = "deployment"
+        message = f"Deployment {result['status'].upper()} — Command: `{command}` | Remote Path: `{remote_path}` | Output: {result['message']}"
+        add_memory_entry(db, context, f"{self.host}:{remote_path}", message)

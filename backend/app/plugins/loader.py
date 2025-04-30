@@ -47,15 +47,17 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
     if plugin_dir is None:
         plugin_dir = os.path.dirname(__file__)
 
-    runner_path = os.path.abspath(os.path.join(plugin_dir, "plugin_runner.py"))
+    runner_path = os.path.abspath(os.path.join(plugin_dir, "runner.py"))
     plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
 
     if not os.path.isfile(plugin_path):
         return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
     env = os.environ.copy()
-    # Inject project root into subprocess environment PYTHONPATH
-    env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    # ✅ Safely inject PROJECT_ROOT into PYTHONPATH
+    existing_path = env.get("PYTHONPATH", "")
+    if PROJECT_ROOT not in existing_path:
+        env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + existing_path
 
     try:
         result = subprocess.run(
@@ -65,10 +67,10 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
             timeout=5,
             cwd=plugin_dir,
             env=env,
-            preexec_fn=set_limits,  # 👈 Added CPU/memory limits
+            preexec_fn=set_limits,
         )
 
-        # --- New: detect if plugin was killed by signal ---
+        # --- Detect if plugin was killed by signal ---
         if result.returncode < 0:
             signal_num = -result.returncode
             if signal_num == signal.SIGKILL:

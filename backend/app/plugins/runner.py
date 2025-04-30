@@ -1,7 +1,13 @@
+import sys
+import os
+import logging
+
+# ✅ Ensure the backend root is in the import path when run as a script
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 from app.plugins.loader import run_plugin
 from app.db.session import SessionLocal
 from app.models import PluginExecution
-import logging
 
 logger = logging.getLogger(__name__)
 

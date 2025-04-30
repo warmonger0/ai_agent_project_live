@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db.session import get_db  # ✅ now from db/session.py
+from app.db.session import get_db  # ✅ from db/session.py
 from app.db import tasks as task_db  # ✅ from db/tasks.py
+from app.db.tasks import add_memory_entry  # ✅ Chat 11 memory ledger hook
 from app.models import Task, PluginExecution
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
+import json
 
 router = APIRouter()
 
@@ -18,6 +20,7 @@ class TaskCreate(BaseModel):
 @router.post("/tasks", response_model=dict)
 def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     task = task_db.create_task(db, description=task_data.description, model_used=task_data.model_used)
+    add_memory_entry(db, "task", task.id, f"Created task with model `{task.model_used}` and description: {task.description}")
     return {
         "id": task.id,
         "status": task.status,
@@ -62,6 +65,7 @@ def update_task(task_id: int, status: str, error_message: Optional[str] = None, 
     )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    add_memory_entry(db, "task", task.id, f"Updated task status to `{status}`. Error: {error_message}")
     return {
         "id": task.id,
         "status": task.status,
@@ -77,6 +81,7 @@ def retry_task(task_id: int, db: Session = Depends(get_db)):
     if task.status != "error":
         raise HTTPException(status_code=400, detail="Only errored tasks can be retried")
     task = task_db.update_task_status(db, task_id, status="pending", error_message=None, completed=False)
+    add_memory_entry(db, "task", task.id, f"Task retried. Status reset to `pending`.")
     return {"message": f"Task {task_id} status set to pending."}
 
 # --- PLUGIN EXECUTION HISTORY ---

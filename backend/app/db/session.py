@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.core.config import settings  # ✅ Reads from .env
 
 # Apply special config only if using SQLite
@@ -21,3 +21,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Non-FastAPI helper for direct session use (e.g. scripts, deployment handler)
+def get_db_session() -> Session:
+    return SessionLocal()

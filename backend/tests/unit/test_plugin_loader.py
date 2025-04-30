@@ -2,7 +2,7 @@ import pytest
 import os
 import tempfile
 import shutil
-from app.plugins import plugin_loader
+from app.plugins import loader as plugin_loader
 
 PLUGIN_NAME = "echo_plugin"
 PLUGIN_INPUT = '{"text": "Unit test input"}'
@@ -20,12 +20,16 @@ def create_plugin_file(dir_path, name, content):
         f.write(content)
 
 def create_plugin_runner(dir_path):
-    with open(os.path.join(dir_path, "plugin_runner.py"), "w") as f:
+    with open(os.path.join(dir_path, "runner.py"), "w") as f:
         f.write("""
 import sys
+import os
 import importlib.util
 import json
 import traceback
+
+# Patch sys.path for resolving imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 if __name__ == "__main__":
     try:
@@ -46,7 +50,6 @@ if __name__ == "__main__":
 
         plugin_instance = plugin_class()
 
-        # Parse input_text from JSON first
         try:
             parsed_input = json.loads(input_text)
         except Exception:
@@ -81,7 +84,6 @@ class TestSuccess:
     assert result["result"] == "HELLO"
 
 def test_run_plugin_not_found(temp_plugin_dir):
-    # No need to create plugin_runner since plugin is missing
     result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
     assert "not found" in result["error"]
