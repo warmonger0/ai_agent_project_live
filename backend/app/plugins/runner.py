@@ -1,5 +1,5 @@
-from app.plugins.plugin_loader import run_plugin
-from app.db import SessionLocal
+from app.plugins.loader import run_plugin
+from app.db.session import SessionLocal
 from app.models import PluginExecution
 import logging
 

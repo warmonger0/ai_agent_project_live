@@ -2,7 +2,7 @@ import asyncio
 import logging
 import httpx
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
+from app.db.session import SessionLocal
 from app.models import Task
 
 # --- Logging Setup: logs to console + file ---
@@ -10,16 +10,29 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s",
     handlers=[
-        logging.FileHandler("healing.log"),     # Writes to backend/healing.log
-        logging.StreamHandler()                 # Still logs to terminal
+        logging.FileHandler("healing.log"),
+        logging.StreamHandler()
     ]
 )
 
 logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL = 15  # seconds
-HEALTH_URL = "http://localhost:8000/api/v1/health"  # ✅ Updated path
+HEALTH_URL = "http://localhost:8000/api/v1/health"
 
+# ✅ Refactored healing task logic into callable
+def reset_failed_tasks(source="healing"):
+    db: Session = SessionLocal()
+    try:
+        failed_tasks = db.query(Task).filter(Task.status == "failed").all()
+        for task in failed_tasks:
+            logger.info(f"🔁 [{source}] Resetting task {task.id} to 'pending'")
+            task.status = "pending"
+        db.commit()
+    finally:
+        db.close()
+
+# Main healing loop
 async def healing_loop():
     while True:
         await asyncio.sleep(CHECK_INTERVAL)
@@ -30,17 +43,9 @@ async def healing_loop():
                 response = await client.get(HEALTH_URL)
                 if response.status_code == 200:
                     logger.info("✅ Health check passed.")
-                    continue  # No need to heal if system is healthy
-
+                    continue
         except Exception as e:
             logger.warning(f"⚠️ Health check failed: {e}")
 
-        db: Session = SessionLocal()
-        try:
-            failed_tasks = db.query(Task).filter(Task.status == "failed").all()
-            for task in failed_tasks:
-                logger.info(f"🔁 Healing: resetting task {task.id} to 'pending'")
-                task.status = "pending"
-            db.commit()
-        finally:
-            db.close()
+        # ✅ Trigger retry logic
+        reset_failed_tasks(source="healing")

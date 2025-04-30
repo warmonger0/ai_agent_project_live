@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import traceback
 
-from app.db import get_db
-from app.plugins.plugin_loader import discover_plugins
-from app.plugins.plugin_runner import run_plugin_job
+from app.db.session import get_db
+from app.plugins.loader import discover_plugins
+from app.plugins.runner import run_plugin_job
 from app.models import PluginExecution
 from app.core.api_response import success_response  # ✅
 

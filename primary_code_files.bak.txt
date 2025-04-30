@@ -1,0 +1,4124 @@
+##### TRACKED FILES #####
+###PATH###
+/home/war/ai_agent_project/backend/alembic/env.py
+### START OF FILE ###
+```py
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.models import Base
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+target_metadata = Base.metadata
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/api/v1/__init__.py
+### START OF FILE ###
+```py
+from fastapi import APIRouter
+from app.controllers import (
+    health_controller,
+    task_controller,
+    healing_controller,
+)
+from app.controllers.logs_controller import router as logs_router
+from app.controllers.plugin_controller import router as plugin_router
+
+api_router = APIRouter()
+
+api_router.include_router(health_controller.router)
+api_router.include_router(task_controller.router)
+api_router.include_router(logs_router)
+api_router.include_router(healing_controller.router)
+api_router.include_router(plugin_router)
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/deployment_handler.py
+### START OF FILE ###
+```py
+# backend/app/controllers/deployment_handler.py
+
+import os
+import json
+from datetime import datetime
+from app.controllers.ssh_client import SSHClientManager
+from typing import Dict
+
+class DeploymentHandler:
+    def __init__(self, host: str, username: str, key_path: str, port: int = 22):
+        self.host = host
+        self.username = username
+        self.key_path = key_path
+        self.port = port
+
+    def deploy_application(self, local_path: str, remote_path: str, run_command: str) -> Dict[str, str]:
+        """
+        Full deployment orchestration:
+        1. Connect to server.
+        2. Upload file.
+        3. Execute command.
+        4. Save deployment result log.
+        5. Return clean result dict.
+        """
+        ssh_manager = SSHClientManager(
+            host=self.host,
+            username=self.username,
+            key_path=self.key_path,
+            port=self.port
+        )
+        
+        try:
+            ssh_manager.connect()
+            ssh_manager.upload_file(local_path=local_path, remote_path=remote_path)
+            output = ssh_manager.execute_command(run_command)
+
+            result = {
+                "status": "success",
+                "message": output
+            }
+
+        except Exception as e:
+            result = {
+                "status": "failure",
+                "message": str(e)
+            }
+
+        finally:
+            ssh_manager.close_connection()
+            self.save_deployment_log(result)  # <<== NEW: Always save deployment log
+
+        return result
+
+    def save_deployment_log(self, result: dict):
+        """
+        Save deployment result to a timestamped log file inside /deployments/logs/.
+        """
+        logs_dir = "deployments/logs"
+        os.makedirs(logs_dir, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+        log_filename = f"{logs_dir}/deployment_{timestamp}.log"
+
+        with open(log_filename, "w") as log_file:
+            json.dump(result, log_file, indent=4)
+
+        print(f"Deployment log saved to: {log_filename}")
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/healing_controller.py
+### START OF FILE ###
+```py
+from fastapi import APIRouter, HTTPException
+import os
+
+router = APIRouter()
+
+LOG_PATH = "healing.log"
+
+@router.get("/healing/status")
+def get_healing_status():
+    if not os.path.exists(LOG_PATH):
+        raise HTTPException(status_code=404, detail="Healing log not found")
+
+    try:
+        with open(LOG_PATH, "r") as f:
+            lines = f.readlines()[-20:]  # Last 20 lines
+        return {"logs": [line.strip() for line in lines]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/health_controller.py
+### START OF FILE ###
+```py
+from fastapi import APIRouter
+from app.utils.ollama_healthcheck import check_ollama_health
+
+router = APIRouter()
+
+@router.get("/health")
+async def health_check():
+    is_model_ok = check_ollama_health()
+
+    return {
+        "backend": "OK",
+        "model": "OK" if is_model_ok else "FAIL"
+    }
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/__init__.py
+### START OF FILE ###
+```py
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/plugin_controller.py
+### START OF FILE ###
+```py
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+import traceback
+
+from app.db.session import get_db
+from app.plugins.loader import discover_plugins
+from app.plugins.runner import run_plugin_job
+from app.models import PluginExecution
+from app.core.api_response import success_response  # ✅
+
+router = APIRouter()
+
+# --- Pydantic input model ---
+class PluginInput(BaseModel):
+    input_text: str
+
+# --- List all available plugins ---
+@router.get("/plugins")
+def list_plugins():
+    try:
+        return success_response({"plugins": discover_plugins()})
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to list plugins: {str(e)}")
+
+# --- Run a plugin ---
+@router.post("/plugins/run/{plugin_name}")
+def execute_plugin(plugin_name: str, payload: PluginInput):
+    try:
+        result = run_plugin_job(plugin_name, payload.input_text, source="manual")
+        if "error" in result:
+            raise HTTPException(status_code=400, detail=result["error"])
+        return success_response(result)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Plugin execution failed: {str(e)}")
+
+# --- Get plugin execution history ---
+@router.get("/plugin/history")
+def get_plugin_execution_history(limit: int = 10, db: Session = Depends(get_db)):
+    try:
+        executions = db.query(PluginExecution).order_by(PluginExecution.timestamp.desc()).limit(limit).all()
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"DB query failed: {str(e)}")
+
+    return success_response([
+        {
+            "id": execution.id,
+            "plugin_name": execution.plugin_name,
+            "input_data": execution.input_data,
+            "output_data": execution.output_data,
+            "status": execution.status,
+            "timestamp": execution.timestamp,
+        }
+        for execution in executions
+    ])
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/ssh_client.py
+### START OF FILE ###
+```py
+# backend/app/controllers/ssh_client.py
+
+import paramiko
+from paramiko import SSHException, AuthenticationException
+from typing import Optional
+
+class SSHClientManager:
+    """
+    SSH Client Manager for handling secure connections,
+    command execution, and file uploads to remote servers.
+    """
+
+    def __init__(self, host: str, username: str, key_path: str, port: int = 22):
+        self.host = host
+        self.username = username
+        self.key_path = key_path
+        self.port = port
+        self.client: Optional[paramiko.SSHClient] = None
+        self.sftp: Optional[paramiko.SFTPClient] = None
+
+    def connect(self):
+        """Establish an SSH connection using the provided credentials."""
+        try:
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.connect(
+                hostname=self.host,
+                username=self.username,
+                key_filename=self.key_path,
+                port=self.port,
+                look_for_keys=False,
+                allow_agent=False
+            )
+            self.sftp = self.client.open_sftp()
+        except AuthenticationException as e:
+            raise Exception(f"Authentication failed: {str(e)}")
+        except SSHException as e:
+            raise Exception(f"SSH connection failed: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Failed to connect via SSH: {str(e)}")
+
+    def execute_command(self, command: str) -> str:
+        """
+        Execute a command on the remote server.
+        Returns the combined output (stdout + stderr).
+        """
+        if not self.client:
+            raise Exception("SSH client is not connected.")
+        
+        stdin, stdout, stderr = self.client.exec_command(command)
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+
+        if error:
+            # TODO: Log error cleanly to deployment logs
+            return f"Error: {error}"
+        
+        return output
+
+    def upload_file(self, local_path: str, remote_path: str):
+        """
+        Upload a file to the remote server.
+        """
+        if not self.sftp:
+            raise Exception("SFTP session is not established.")
+        
+        self.sftp.put(local_path, remote_path)
+
+    def close_connection(self):
+        """Close the SSH and SFTP sessions."""
+        if self.sftp:
+            self.sftp.close()
+        if self.client:
+            self.client.close()
+
+# TODO:
+# - Add optional timeout/retry logic for commands.
+# - Implement error logging into /deployments/logs/ (success/failure details).
+# - Expand with async versions (optional later for multiple deployments).
+# - Add a DeploymentManager wrapper to orchestrate multiple server deployments.
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/task_controller.py
+### START OF FILE ###
+```py
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.db.session import get_db  # ✅ now from db/session.py
+from app.db import tasks as task_db  # ✅ from db/tasks.py
+from app.models import Task, PluginExecution
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
+
+router = APIRouter()
+
+# --- Pydantic input model for new task creation ---
+class TaskCreate(BaseModel):
+    description: str
+    model_used: str
+
+# --- TASK ROUTES ---
+
+@router.post("/tasks", response_model=dict)
+def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
+    task = task_db.create_task(db, description=task_data.description, model_used=task_data.model_used)
+    return {
+        "id": task.id,
+        "status": task.status,
+        "created_at": task.created_at
+    }
+
+@router.get("/tasks", response_model=List[dict])
+def get_all_tasks(db: Session = Depends(get_db)):
+    tasks = task_db.get_all_tasks(db)
+    return [
+        {
+            "id": t.id,
+            "description": t.description,
+            "model_used": t.model_used,
+            "status": t.status,
+            "created_at": t.created_at,
+            "completed_at": t.completed_at,
+        }
+        for t in tasks
+    ]
+
+@router.get("/tasks/{task_id}", response_model=dict)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    task = task_db.get_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {
+        "id": task.id,
+        "description": task.description,
+        "model_used": task.model_used,
+        "status": task.status,
+        "created_at": task.created_at,
+        "completed_at": task.completed_at,
+    }
+
+@router.patch("/tasks/{task_id}", response_model=dict)
+def update_task(task_id: int, status: str, error_message: Optional[str] = None, db: Session = Depends(get_db)):
+    task = task_db.update_task_status(
+        db, task_id, status=status,
+        error_message=error_message,
+        completed=(status in ["success", "error"])
+    )
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {
+        "id": task.id,
+        "status": task.status,
+        "error_message": task.error_message,
+        "completed_at": task.completed_at,
+    }
+
+@router.post("/retry/{task_id}")
+def retry_task(task_id: int, db: Session = Depends(get_db)):
+    task = task_db.get_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.status != "error":
+        raise HTTPException(status_code=400, detail="Only errored tasks can be retried")
+    task = task_db.update_task_status(db, task_id, status="pending", error_message=None, completed=False)
+    return {"message": f"Task {task_id} status set to pending."}
+
+# --- PLUGIN EXECUTION HISTORY ---
+
+@router.get("/plugin-results", response_model=List[dict])
+def get_plugin_execution_history(plugin_name: Optional[str] = None, db: Session = Depends(get_db)):
+    executions = task_db.get_plugin_executions(db, plugin_name)
+    return [
+        {
+            "id": e.id,
+            "plugin_name": e.plugin_name,
+            "input_data": e.input_data,
+            "output_data": e.output_data,
+            "status": e.status,
+            "timestamp": e.timestamp,
+            "completed_at": e.completed_at,
+            "error_message": e.error_message
+        }
+        for e in executions
+    ]
+
+# --- Status List for UI Dropdown ---
+@router.get("/tasks/status/all", response_model=List[str])
+def get_all_statuses():
+    return ["pending", "running", "success", "error"]
+
+# --- Alias to match frontend call ---
+@router.get("/status/all", response_model=List[str])
+def get_status_alias():
+    return get_all_statuses()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/test_deployment_handler.py
+### START OF FILE ###
+```py
+# backend/app/controllers/test_deployment_handler.py
+
+from app.controllers.deployment_handler import DeploymentHandler
+import os
+import json
+from datetime import datetime
+
+
+# Connection Info
+HOST = "127.0.0.1"
+USERNAME = os.getlogin()
+KEY_PATH = os.path.expanduser("~/.ssh/localhost_rsa")  # Same as before
+PORT = 22
+
+# Deployment Paths
+LOCAL_APP_PATH = "deployments/last_build/dummy_app/app.py"
+REMOTE_APP_PATH = "/tmp/deployed_app_v2.py"  # Deploy to a new file for clarity
+RUN_COMMAND = "python3 /tmp/deployed_app_v2.py"
+
+def test_full_deployment():
+    deployer = DeploymentHandler(
+        host=HOST,
+        username=USERNAME,
+        key_path=KEY_PATH,
+        port=PORT
+    )
+
+    result = deployer.deploy_application(
+        local_path=LOCAL_APP_PATH,
+        remote_path=REMOTE_APP_PATH,
+        run_command=RUN_COMMAND
+    )
+
+    print("Deployment Result:")
+    print(result)
+
+if __name__ == "__main__":
+    test_full_deployment()
+
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/controllers/test_ssh_deploy.py
+### START OF FILE ###
+```py
+# backend/app/controllers/test_ssh_deploy.py
+
+from app.controllers.ssh_client import SSHClientManager
+import os
+
+# SSH connection info for localhost
+HOST = "127.0.0.1"
+USERNAME = os.getlogin()  # Gets your current username automatically
+KEY_PATH = os.path.expanduser("~/.ssh/localhost_rsa")
+PORT = 22
+
+# Paths
+LOCAL_APP_PATH = "deployments/last_build/dummy_app/app.py"
+REMOTE_APP_PATH = "/tmp/deployed_app.py"  # Upload location on localhost
+
+def simulate_local_deployment():
+    ssh_manager = SSHClientManager(host=HOST, username=USERNAME, key_path=KEY_PATH, port=PORT)
+
+    try:
+        print("Connecting to localhost SSH...")
+        ssh_manager.connect()
+
+        print(f"Uploading {LOCAL_APP_PATH} to {REMOTE_APP_PATH}...")
+        ssh_manager.upload_file(local_path=LOCAL_APP_PATH, remote_path=REMOTE_APP_PATH)
+
+        print("Running uploaded app remotely...")
+        output = ssh_manager.execute_command(f"python3 {REMOTE_APP_PATH}")
+
+        print("Command Output:")
+        print(output)
+
+    except Exception as e:
+        print(f"Deployment simulation failed: {e}")
+    finally:
+        ssh_manager.close_connection()
+        print("SSH connection closed.")
+
+if __name__ == "__main__":
+    simulate_local_deployment()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/core/api_response.py
+### START OF FILE ###
+```py
+def success_response(data):
+    return {"ok": True, "data": data}
+
+def error_response(message, details=None):
+    return {
+        "ok": False,
+        "error": message,
+        "details": details or [],
+    }
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/core/config.py
+### START OF FILE ###
+```py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class Settings(BaseSettings):
+    app_env: str
+    database_url: str
+    frontend_url: str
+
+    model_config = SettingsConfigDict(env_file=".env")
+
+settings = Settings()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/core/error_handler.py
+### START OF FILE ###
+```py
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+import traceback
+import logging
+
+from app.core.api_response import error_response  # ✅ centralized shape
+
+logger = logging.getLogger(__name__)
+
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(exc.detail or "HTTP error")
+    )
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    details = [err["msg"] for err in exc.errors()]
+    return JSONResponse(
+        status_code=422,
+        content=error_response("Validation failed", details)
+    )
+
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled Exception: %s", traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content=error_response("Internal server error", [str(exc)])
+    )
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/db/__init__.py
+### START OF FILE ###
+```py
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/db/session.py
+### START OF FILE ###
+```py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from app.core.config import settings  # ✅ Reads from .env
+
+# Apply special config only if using SQLite
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+# Create engine dynamically from .env
+engine = create_engine(settings.database_url, connect_args=connect_args)
+
+# Create shared session factory and base model
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# FastAPI dependency for DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/db/tasks.py
+### START OF FILE ###
+```py
+from sqlalchemy.orm import Session
+from app.models import Task, PluginExecution, MemoryLedger
+from datetime import datetime
+from typing import Optional
+
+
+# --- Task Operations ---
+
+def create_task(db: Session, description: str, model_used: str) -> Task:
+    task = Task(description=description, model_used=model_used)
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def get_task(db: Session, task_id: int) -> Optional[Task]:
+    return db.query(Task).filter(Task.id == task_id).first()
+
+
+def get_all_tasks(db: Session) -> list[Task]:
+    return db.query(Task).order_by(Task.created_at.desc()).all()
+
+
+def update_task_status(
+    db: Session,
+    task_id: int,
+    status: str,
+    error_message: Optional[str] = None,
+    completed: bool = False
+) -> Optional[Task]:
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        return None
+
+    task.status = status
+    if error_message:
+        task.error_message = error_message
+    if completed:
+        task.completed_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+# --- PluginExecution Operations ---
+
+def create_plugin_execution(db: Session, plugin_name: str, input_data: dict) -> PluginExecution:
+    plugin_exec = PluginExecution(plugin_name=plugin_name, input_data=input_data)
+    db.add(plugin_exec)
+    db.commit()
+    db.refresh(plugin_exec)
+    return plugin_exec
+
+
+def get_plugin_executions(db: Session, plugin_name: Optional[str] = None) -> list[PluginExecution]:
+    query = db.query(PluginExecution)
+    if plugin_name:
+        query = query.filter(PluginExecution.plugin_name == plugin_name)
+    return query.order_by(PluginExecution.timestamp.desc()).all()
+
+
+def update_plugin_execution(
+    db: Session,
+    execution_id: int,
+    status: str,
+    output_data: Optional[dict] = None,
+    error_message: Optional[str] = None,
+) -> Optional[PluginExecution]:
+    execution = db.query(PluginExecution).filter(PluginExecution.id == execution_id).first()
+    if not execution:
+        return None
+
+    execution.status = status
+    if output_data:
+        execution.output_data = output_data
+    if error_message:
+        execution.error_message = error_message
+    execution.completed_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(execution)
+    return execution
+
+
+# --- Memory Ledger (Placeholder Write) ---
+
+def add_memory_entry(db: Session, context_type: str, related_id: Optional[int], content: str) -> MemoryLedger:
+    entry = MemoryLedger(context_type=context_type, related_id=related_id, content=content)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/__init__.py
+### START OF FILE ###
+```py
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/main.py
+### START OF FILE ###
+```py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi import HTTPException
+
+from app.core import error_handler
+from app.core.config import settings
+from app.api.v1 import api_router
+from app.db.session import engine, Base
+from app.services.healing_loop import healing_loop
+import asyncio
+
+# ----------------------------------------
+# Create FastAPI app instance
+# ----------------------------------------
+app = FastAPI()
+
+# ----------------------------------------
+# Register custom error handlers
+# ----------------------------------------
+app.add_exception_handler(HTTPException, error_handler.http_exception_handler)
+app.add_exception_handler(RequestValidationError, error_handler.validation_exception_handler)
+app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
+
+# ----------------------------------------
+# CORS Middleware Setup (from .env)
+# ----------------------------------------
+allowed_origins = (
+    [settings.frontend_url]
+    if settings.app_env == "production"
+    else ["*"]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ----------------------------------------
+# Versioned API Registration
+# ----------------------------------------
+app.include_router(api_router, prefix="/api/v1")
+
+# ----------------------------------------
+# Root Route
+# ----------------------------------------
+@app.get("/")
+async def root():
+    return {"message": f"Local AI Agent Brain Running in {settings.app_env} mode"}
+
+# ----------------------------------------
+# App Startup: DB Init + Healing Loop
+# ----------------------------------------
+@app.on_event("startup")
+async def startup_event():
+    Base.metadata.create_all(bind=engine)
+    asyncio.create_task(healing_loop())
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/models.py
+### START OF FILE ###
+```py
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
+from app.db.session import Base
+
+
+# --- Task model ---
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    description = Column(Text, nullable=False)
+    model_used = Column(String, nullable=False)
+    generated_code = Column(Text, nullable=True)
+
+    status = Column(String, default="pending")  # pending | running | success | error
+    error_message = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+
+# --- Plugin Execution History model ---
+class PluginExecution(Base):
+    __tablename__ = "plugin_executions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plugin_name = Column(String, index=True)
+
+    input_data = Column(JSON, nullable=False)
+    output_data = Column(JSON, nullable=True)
+
+    status = Column(String, default="pending")  # pending | running | success | error
+    error_message = Column(Text, nullable=True)
+
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+
+# --- Memory Ledger model (placeholder) ---
+class MemoryLedger(Base):
+    __tablename__ = "memory_ledger"
+
+    id = Column(Integer, primary_key=True, index=True)
+    context_type = Column(String, nullable=False)  # task / plugin / note / error
+    related_id = Column(Integer, nullable=True)    # Optional FK to Task or PluginExecution
+    content = Column(Text, nullable=False)
+
+    timestamp = Column(DateTime, default=datetime.utcnow)
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/plugins/echo_plugin.py
+### START OF FILE ###
+```py
+class Plugin:
+    name = "Echo"
+    description = "Returns input as output."
+
+    def run(self, input_text: str) -> str:
+        return f"Echo: {input_text}"
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/plugins/loader.py
+### START OF FILE ###
+```py
+import os
+import sys
+import importlib.util
+import inspect
+import subprocess
+import json
+import resource  # 👈 Added for sandboxing
+import signal    # 👈 Added for signal detection
+from typing import Dict, List, Any
+
+PLUGIN_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../../"))
+
+def set_limits():
+    # Limit CPU time (seconds)
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))  # Max 2 seconds of CPU time
+    # Limit address space (memory usage) to 200 MB
+    mem_limit = 200 * 1024 * 1024  # 200MB
+    resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
+
+def discover_plugins() -> List[Dict[str, Any]]:
+    plugins = []
+    for filename in os.listdir(PLUGIN_DIR):
+        if not filename.endswith(".py") or filename.startswith("_"):
+            continue
+        path = os.path.join(PLUGIN_DIR, filename)
+        name = filename[:-3]
+        try:
+            spec = importlib.util.spec_from_file_location(name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as e:
+            print(f"⚠️ Skipping plugin '{name}' due to import error: {e}")
+            continue
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if inspect.isclass(attr) and hasattr(attr, 'run') and callable(attr.run):
+                plugins.append({
+                    "name": getattr(attr, "name", name),
+                    "description": getattr(attr, "description", ""),
+                    "module": name,
+                    "class": attr.__name__,
+                })
+    return plugins
+
+def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
+    if plugin_dir is None:
+        plugin_dir = os.path.dirname(__file__)
+
+    runner_path = os.path.abspath(os.path.join(plugin_dir, "plugin_runner.py"))
+    plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
+
+    if not os.path.isfile(plugin_path):
+        return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
+
+    env = os.environ.copy()
+    # Inject project root into subprocess environment PYTHONPATH
+    env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+
+    try:
+        result = subprocess.run(
+            ["python3", runner_path, plugin_name, input_text],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=plugin_dir,
+            env=env,
+            preexec_fn=set_limits,  # 👈 Added CPU/memory limits
+        )
+
+        # --- New: detect if plugin was killed by signal ---
+        if result.returncode < 0:
+            signal_num = -result.returncode
+            if signal_num == signal.SIGKILL:
+                return {"ok": False, "error": "Plugin terminated: Killed (possible Out of Memory)"}
+            elif signal_num == signal.SIGXCPU:
+                return {"ok": False, "error": "Plugin terminated: CPU time limit exceeded"}
+            else:
+                return {"ok": False, "error": f"Plugin terminated by signal {signal_num}"}
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip() or "Unknown error."
+            return {"ok": False, "error": f"Plugin process failed: {stderr}"}
+
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            return {"ok": False, "error": f"Invalid plugin output (not JSON): {e}"}
+
+        if "error" in output:
+            return {"ok": False, "error": f"Plugin error: {output['error']}"}
+
+        if "result" not in output:
+            return {"ok": False, "error": "Plugin returned invalid output: missing 'result' key."}
+
+        return {"ok": True, "result": output["result"]}
+
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "Plugin execution timed out."}
+    except Exception as e:
+        return {"ok": False, "error": f"Unexpected error: {str(e)}"}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/plugins/logger.py
+### START OF FILE ###
+```py
+from datetime import datetime
+
+from app.db import SessionLocal
+from app.models import PluginExecution
+
+
+def store_plugin_execution(plugin_name: str, input_data: dict, output_data: dict, status: str) -> None:
+    """
+    Stores a plugin execution record in the database.
+
+    Args:
+        plugin_name (str): The name of the executed plugin.
+        input_data (dict): The input payload sent to the plugin.
+        output_data (dict): The result or error from plugin execution.
+        status (str): One of "success" or "error".
+    """
+    db = SessionLocal()
+    try:
+        execution = PluginExecution(
+            plugin_name=plugin_name,
+            input_data=input_data,
+            output_data=output_data,
+            status=status,
+            timestamp=datetime.utcnow()
+        )
+        db.add(execution)
+        db.commit()
+    finally:
+        db.close()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/plugins/runner.py
+### START OF FILE ###
+```py
+from app.plugins.loader import run_plugin
+from app.db.session import SessionLocal
+from app.models import PluginExecution
+import logging
+
+logger = logging.getLogger(__name__)
+
+def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
+    db = SessionLocal()
+    try:
+        # 🔁 Run plugin logic
+        output = run_plugin(plugin_name, input_text)
+
+        # ✅ Normalize success
+        result = {"result": output} if not isinstance(output, dict) else output
+
+        execution = PluginExecution(
+            plugin_name=plugin_name,
+            input_data={"input_text": input_text, "source": source},
+            output_data=result,
+            status="success"
+        )
+        db.add(execution)
+        db.commit()
+
+        logger.info(f"✅ Plugin '{plugin_name}' ran successfully [{source}]")
+        return result
+
+    except Exception as e:
+        logger.exception(f"❌ Plugin '{plugin_name}' failed [{source}]")
+
+        error = {"error": str(e)}
+        execution = PluginExecution(
+            plugin_name=plugin_name,
+            input_data={"input_text": input_text, "source": source},
+            output_data=error,
+            status="error"
+        )
+        db.add(execution)
+        db.commit()
+        return error
+
+    finally:
+        db.close()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/schemas.py
+### START OF FILE ###
+```py
+from pydantic import BaseModel
+
+class TaskRequest(BaseModel):
+    description: str
+
+class TaskResponse(BaseModel):
+    task_id: int
+    status: str
+    generated_code: str
+
+class TaskStatusResponse(BaseModel):
+    task_id: int
+    description: str
+    model_used: str
+    generated_code: str
+    status: str
+
+class TaskSummaryResponse(BaseModel):
+    task_id: int
+    description: str
+    status: str
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/services/healing_loop.py
+### START OF FILE ###
+```py
+import asyncio
+import logging
+import httpx
+from sqlalchemy.orm import Session
+from app.db.session import SessionLocal
+from app.models import Task
+
+# --- Logging Setup: logs to console + file ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    handlers=[
+        logging.FileHandler("healing.log"),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+CHECK_INTERVAL = 15  # seconds
+HEALTH_URL = "http://localhost:8000/api/v1/health"
+
+# ✅ Refactored healing task logic into callable
+def reset_failed_tasks(source="healing"):
+    db: Session = SessionLocal()
+    try:
+        failed_tasks = db.query(Task).filter(Task.status == "failed").all()
+        for task in failed_tasks:
+            logger.info(f"🔁 [{source}] Resetting task {task.id} to 'pending'")
+            task.status = "pending"
+        db.commit()
+    finally:
+        db.close()
+
+# Main healing loop
+async def healing_loop():
+    while True:
+        await asyncio.sleep(CHECK_INTERVAL)
+        logger.info("🔁 Running healing check...")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(HEALTH_URL)
+                if response.status_code == 200:
+                    logger.info("✅ Health check passed.")
+                    continue
+        except Exception as e:
+            logger.warning(f"⚠️ Health check failed: {e}")
+
+        # ✅ Trigger retry logic
+        reset_failed_tasks(source="healing")
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/utils/model_router.py
+### START OF FILE ###
+```py
+def route_task_to_model(description: str) -> str:
+    """
+    Always route to 'deepseek-coder' model for now.
+    Future: add logic based on description.
+    """
+    return "deepseek-coder"
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/utils/monitor.py
+### START OF FILE ###
+```py
+import requests
+
+def check_backend_health(base_url="http://localhost:8000"):
+    try:
+        response = requests.get(f"{base_url}/health", timeout=3)
+        return response.status_code == 200, response.json()
+    except Exception:
+        return False, None
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/app/utils/ollama_healthcheck.py
+### START OF FILE ###
+```py
+import requests
+
+def check_ollama_health():
+    try:
+        response = requests.get("http://127.0.0.1:11434/api/tags", timeout=5)
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            model_names = [model.get("name", "") for model in models]
+            if any("deepseek-coder" in name for name in model_names):
+                print("✅ Ollama server is healthy and DeepSeek-Coder model is available!")
+                return True
+            else:
+                print("❌ Ollama server is running but DeepSeek-Coder model is missing.")
+                return False
+        else:
+            print(f"❌ Unexpected status code from Ollama API: {response.status_code}")
+            return False
+    except requests.RequestException as e:
+        print(f"❌ Failed to connect to Ollama server: {e}")
+        return False
+
+if __name__ == "__main__":
+    check_ollama_health()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/migrations/env.py
+### START OF FILE ###
+```py
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+from app.models import Base
+target_metadata = Base.metadata
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/migrations/versions/2d69244356e1_add_error_message_timestamp_completed_.py
+### START OF FILE ###
+```py
+"""Add error_message, timestamp, completed_at to PluginExecution
+
+Revision ID: 2d69244356e1
+Revises: f4fa5b30e239
+Create Date: 2025-04-29 16:52:49.411162
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = '2d69244356e1'
+down_revision: Union[str, None] = 'f4fa5b30e239'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.add_column('plugin_executions', sa.Column('error_message', sa.Text(), nullable=True))
+    op.add_column('plugin_executions', sa.Column('completed_at', sa.DateTime(), nullable=True))
+    op.add_column('tasks', sa.Column('error_message', sa.Text(), nullable=True))
+    op.add_column('tasks', sa.Column('completed_at', sa.DateTime(), nullable=True))
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_column('tasks', 'completed_at')
+    op.drop_column('tasks', 'error_message')
+    op.drop_column('plugin_executions', 'completed_at')
+    op.drop_column('plugin_executions', 'error_message')
+    # ### end Alembic commands ###
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/migrations/versions/f4fa5b30e239_initial_tables_task_and_pluginexecution.py
+### START OF FILE ###
+```py
+"""initial tables: Task and PluginExecution
+
+Revision ID: f4fa5b30e239
+Revises: 
+Create Date: 2025-04-25 03:42:19.134802
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = 'f4fa5b30e239'
+down_revision: Union[str, None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('plugin_executions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('plugin_name', sa.String(), nullable=True),
+    sa.Column('input_data', sa.JSON(), nullable=False),
+    sa.Column('output_data', sa.JSON(), nullable=True),
+    sa.Column('status', sa.String(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_plugin_executions_id'), 'plugin_executions', ['id'], unique=False)
+    op.create_index(op.f('ix_plugin_executions_plugin_name'), 'plugin_executions', ['plugin_name'], unique=False)
+    op.create_table('tasks',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('model_used', sa.String(), nullable=False),
+    sa.Column('generated_code', sa.Text(), nullable=True),
+    sa.Column('status', sa.String(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_tasks_id'), 'tasks', ['id'], unique=False)
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_tasks_id'), table_name='tasks')
+    op.drop_table('tasks')
+    op.drop_index(op.f('ix_plugin_executions_plugin_name'), table_name='plugin_executions')
+    op.drop_index(op.f('ix_plugin_executions_id'), table_name='plugin_executions')
+    op.drop_table('plugin_executions')
+    # ### end Alembic commands ###
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/plugins/echo_plugin.py
+### START OF FILE ###
+```py
+# echo_plugin.py
+
+class Plugin:
+    name = "Echo"
+    description = "Returns input as output."
+
+    def run(self, input_text: str) -> str:
+        return f"Echo: {input_text}"
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/scripts/inspect_db.py
+### START OF FILE ###
+```py
+from app.db import engine
+from sqlalchemy import inspect
+
+if __name__ == "__main__":
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    print("📦 Tables found in database:", tables)
+
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/conftest.py
+### START OF FILE ###
+```py
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/integration/test_task_routes.py
+### START OF FILE ###
+```py
+import os
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models import Base
+from app.main import app
+from app.db import get_db
+
+# --- Setup disk-based SQLite test DB ---
+DATABASE_URL = "sqlite:///./test_database.db"  # ✅ Persistent during tests
+
+# 1. Create engine and session
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(bind=engine)
+
+# 2. Override DB dependency for FastAPI
+def override_get_db():
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 3. Apply override
+app.dependency_overrides[get_db] = override_get_db
+
+# 4. Initialize test client
+client = TestClient(app)
+
+# --- TESTS ---
+
+def test_create_task():
+    payload = {"description": "Test Task", "model_used": "deepseek"}
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "pending"
+    assert "created_at" in data
+
+
+def test_get_all_tasks():
+    client.post("/tasks", json={"description": "Seed", "model_used": "any"})
+    response = client.get("/tasks")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+
+def test_get_task_by_id():
+    create_res = client.post("/tasks", json={"description": "Fetch Me", "model_used": "claude"})
+    task_id = create_res.json()["id"]
+
+    fetch_res = client.get(f"/tasks/{task_id}")
+    assert fetch_res.status_code == 200
+    data = fetch_res.json()
+    assert data["description"] == "Fetch Me"
+
+
+def test_patch_task_status():
+    post = client.post("/tasks", json={"description": "Patch Me", "model_used": "test"})
+    task_id = post.json()["id"]
+
+    patch = client.patch(f"/tasks/{task_id}?status=success")
+    assert patch.status_code == 200
+    data = patch.json()
+    assert data["status"] == "success"
+    assert data["completed_at"] is not None
+
+
+def test_retry_task():
+    post = client.post("/tasks", json={"description": "Retry Me", "model_used": "test"})
+    task_id = post.json()["id"]
+
+    client.patch(f"/tasks/{task_id}?status=error&error_message=boom")
+
+    retry = client.post(f"/retry/{task_id}")
+    assert retry.status_code == 200
+    assert "pending" in retry.json()["message"]
+
+
+def test_plugin_results_empty():
+    response = client.get("/plugin-results")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+# --- Optional Cleanup After All Tests ---
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_db():
+    yield
+    if os.path.exists("./test_database.db"):
+        os.remove("./test_database.db")
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/unit/test_models.py
+### START OF FILE ###
+```py
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models import Base, Task, PluginExecution, MemoryLedger
+from datetime import datetime
+
+# Use in-memory SQLite DB for test isolation
+DATABASE_URL = "sqlite:///:memory:"
+
+@pytest.fixture(scope="function")
+def session():
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def test_create_task(session):
+    task = Task(
+        description="Test task run",
+        model_used="deepseek-v2"
+    )
+    session.add(task)
+    session.commit()
+    result = session.query(Task).first()
+    assert result.description == "Test task run"
+    assert result.status == "pending"
+    assert result.created_at is not None
+    assert result.completed_at is None
+
+
+def test_create_plugin_execution(session):
+    plugin = PluginExecution(
+        plugin_name="echo_plugin",
+        input_data={"text": "hello world"}
+    )
+    session.add(plugin)
+    session.commit()
+    result = session.query(PluginExecution).first()
+    assert result.plugin_name == "echo_plugin"
+    assert result.status == "pending"
+    assert result.input_data["text"] == "hello world"
+    assert result.completed_at is None
+
+
+def test_create_memory_ledger(session):
+    entry = MemoryLedger(
+        context_type="task",
+        related_id=1,
+        content="This is a memory entry."
+    )
+    session.add(entry)
+    session.commit()
+    result = session.query(MemoryLedger).first()
+    assert result.context_type == "task"
+    assert result.related_id == 1
+    assert result.content == "This is a memory entry."
+    assert isinstance(result.timestamp, datetime)
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/unit/test_plugin_history.py
+### START OF FILE ###
+```py
+# /backend/tests/unit/test_plugin_history.py
+
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
+
+def test_get_plugin_history():
+    response = client.get("/plugin/history")
+    assert response.status_code == 200
+
+    history = response.json()
+    assert isinstance(history, list)
+
+    if history:  # if any executions exist
+        sample = history[0]
+        assert "plugin_name" in sample
+        assert "input_data" in sample
+        assert "output_data" in sample
+        assert "status" in sample
+        assert "timestamp" in sample
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/unit/test_plugin_loader.py
+### START OF FILE ###
+```py
+import pytest
+import os
+import tempfile
+import shutil
+from app.plugins import plugin_loader
+
+PLUGIN_NAME = "echo_plugin"
+PLUGIN_INPUT = '{"text": "Unit test input"}'
+
+
+@pytest.fixture
+def temp_plugin_dir():
+    # Create a temporary plugin directory
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir)
+
+def create_plugin_file(dir_path, name, content):
+    with open(os.path.join(dir_path, f"{name}.py"), "w") as f:
+        f.write(content)
+
+def create_plugin_runner(dir_path):
+    with open(os.path.join(dir_path, "plugin_runner.py"), "w") as f:
+        f.write("""
+import sys
+import importlib.util
+import json
+import traceback
+
+if __name__ == "__main__":
+    try:
+        plugin_name = sys.argv[1]
+        input_text = sys.argv[2]
+        plugin_module = importlib.import_module(plugin_name)
+
+        # Find class with 'run' method
+        plugin_class = None
+        for attr_name in dir(plugin_module):
+            attr = getattr(plugin_module, attr_name)
+            if isinstance(attr, type) and hasattr(attr, "run"):
+                plugin_class = attr
+                break
+
+        if plugin_class is None:
+            raise Exception("No valid plugin class with run() found.")
+
+        plugin_instance = plugin_class()
+
+        # Parse input_text from JSON first
+        try:
+            parsed_input = json.loads(input_text)
+        except Exception:
+            parsed_input = input_text
+
+        result = plugin_instance.run(parsed_input)
+        print(json.dumps({"result": result}))
+
+    except Exception as e:
+        error_info = traceback.format_exc()
+        print(json.dumps({"error": str(e), "traceback": error_info}))
+""")
+
+def test_plugin_discovery():
+    plugins_list = plugin_loader.discover_plugins()
+    names = [p["name"] for p in plugins_list]
+    assert "Echo" in names
+
+def test_run_plugin_success(temp_plugin_dir):
+    create_plugin_runner(temp_plugin_dir)
+    create_plugin_file(temp_plugin_dir, "test_success", """
+class TestSuccess:
+    def run(self, input_data):
+        if isinstance(input_data, str):
+            return input_data.upper()
+        if isinstance(input_data, dict):
+            return input_data.get('text', '').upper()
+        return str(input_data).upper()
+""")
+    result = plugin_loader.run_plugin("test_success", "hello", plugin_dir=temp_plugin_dir)
+    assert result["ok"] is True
+    assert result["result"] == "HELLO"
+
+def test_run_plugin_not_found(temp_plugin_dir):
+    # No need to create plugin_runner since plugin is missing
+    result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
+    assert result["ok"] is False
+    assert "not found" in result["error"]
+
+def test_run_plugin_crash(temp_plugin_dir):
+    create_plugin_runner(temp_plugin_dir)
+    create_plugin_file(temp_plugin_dir, "test_crash", """
+class TestCrash:
+    def run(self, input_data):
+        raise Exception("Crash test")
+""")
+    result = plugin_loader.run_plugin("test_crash", "hello", plugin_dir=temp_plugin_dir)
+    assert result["ok"] is False
+    assert "failed" in result["error"] or "error" in result["error"]
+
+def test_run_plugin_timeout(temp_plugin_dir):
+    create_plugin_runner(temp_plugin_dir)
+    create_plugin_file(temp_plugin_dir, "test_timeout", """
+class TestTimeout:
+    def run(self, input_data):
+        import time
+        time.sleep(10)
+        return "done"
+""")
+    result = plugin_loader.run_plugin("test_timeout", "hello", plugin_dir=temp_plugin_dir)
+    assert result["ok"] is False
+    assert "timed out" in result["error"]
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/unit/test_ssh_client.py
+### START OF FILE ###
+```py
+# tests/unit/test_ssh_client.py
+
+import pytest
+from unittest.mock import patch, MagicMock
+from backend.app.controllers.ssh_client import SSHClientManager
+
+# Dummy connection details
+HOST = "dummy_host"
+USERNAME = "dummy_user"
+KEY_PATH = "/path/to/dummy_key"
+
+@pytest.fixture
+def ssh_client_manager():
+    return SSHClientManager(host=HOST, username=USERNAME, key_path=KEY_PATH)
+
+@patch('backend.app.controllers.ssh_client.paramiko.SSHClient')
+def test_connect_success(mock_ssh_client, ssh_client_manager):
+    mock_instance = mock_ssh_client.return_value
+    ssh_client_manager.connect()
+    mock_instance.connect.assert_called_once_with(
+        hostname=HOST,
+        username=USERNAME,
+        key_filename=KEY_PATH,
+        port=22,
+        look_for_keys=False,
+        allow_agent=False
+    )
+
+@patch('backend.app.controllers.ssh_client.paramiko.SSHClient')
+def test_execute_command_success(mock_ssh_client, ssh_client_manager):
+    mock_instance = mock_ssh_client.return_value
+    mock_instance.exec_command.return_value = (None, MagicMock(), MagicMock())
+    mock_stdout = mock_instance.exec_command.return_value[1]
+    mock_stderr = mock_instance.exec_command.return_value[2]
+    mock_stdout.read.return_value = b"Command output"
+    mock_stderr.read.return_value = b""
+
+    ssh_client_manager.client = mock_instance  # Pretend already connected
+    output = ssh_client_manager.execute_command("ls")
+    assert output == "Command output"
+
+@patch('backend.app.controllers.ssh_client.paramiko.SSHClient')
+def test_upload_file_success(mock_ssh_client, ssh_client_manager):
+    mock_instance = mock_ssh_client.return_value
+    mock_sftp = MagicMock()
+    mock_instance.open_sftp.return_value = mock_sftp
+
+    ssh_client_manager.client = mock_instance
+    ssh_client_manager.sftp = mock_sftp
+    ssh_client_manager.upload_file("local_path.txt", "remote_path.txt")
+
+    mock_sftp.put.assert_called_once_with("local_path.txt", "remote_path.txt")
+
+@patch('backend.app.controllers.ssh_client.paramiko.SSHClient')
+def test_connection_failure(mock_ssh_client, ssh_client_manager):
+    mock_instance = mock_ssh_client.return_value
+    mock_instance.connect.side_effect = Exception("Connection failed")
+
+    with pytest.raises(Exception, match="Failed to connect via SSH: Connection failed"):
+        ssh_client_manager.connect()
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/backend/tests/unit/test_task_db.py
+### START OF FILE ###
+```py
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models import Base
+from app.services import task_db
+
+# In-memory SQLite for isolation
+DATABASE_URL = "sqlite:///:memory:"
+
+@pytest.fixture(scope="function")
+def db_session():
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# --- Task Tests ---
+
+def test_create_task(db_session):
+    task = task_db.create_task(db_session, "Test task", "deepseek-v2")
+    assert task.id is not None
+    assert task.status == "pending"
+    assert task.description == "Test task"
+
+def test_get_task(db_session):
+    task = task_db.create_task(db_session, "Retrieve task", "claude")
+    fetched = task_db.get_task(db_session, task.id)
+    assert fetched.id == task.id
+
+def test_update_task_status(db_session):
+    task = task_db.create_task(db_session, "Needs update", "deepseek")
+    updated = task_db.update_task_status(db_session, task.id, "success", completed=True)
+    assert updated.status == "success"
+    assert updated.completed_at is not None
+
+# --- Plugin Execution Tests ---
+
+def test_create_plugin_execution(db_session):
+    exec = task_db.create_plugin_execution(db_session, "echo_plugin", {"msg": "hi"})
+    assert exec.id is not None
+    assert exec.status == "pending"
+    assert exec.input_data["msg"] == "hi"
+
+def test_get_plugin_executions(db_session):
+    task_db.create_plugin_execution(db_session, "echo_plugin", {"x": 1})
+    task_db.create_plugin_execution(db_session, "math_plugin", {"y": 2})
+    all_execs = task_db.get_plugin_executions(db_session)
+    echo_only = task_db.get_plugin_executions(db_session, plugin_name="echo_plugin")
+    assert len(all_execs) >= 2
+    assert all(x.plugin_name == "echo_plugin" for x in echo_only)
+
+def test_update_plugin_execution(db_session):
+    exec = task_db.create_plugin_execution(db_session, "echo_plugin", {"text": "go"})
+    updated = task_db.update_plugin_execution(db_session, exec.id, "success", output_data={"out": "go"})
+    assert updated.status == "success"
+    assert updated.output_data["out"] == "go"
+    assert updated.completed_at is not None
+
+# --- Memory Ledger Tests ---
+
+def test_add_memory_entry(db_session):
+    entry = task_db.add_memory_entry(db_session, "task", related_id=5, content="Test note")
+    assert entry.id is not None
+    assert entry.content == "Test note"
+    assert entry.context_type == "task"
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/eslint.config.js
+### START OF FILE ###
+```js
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: ["dist"] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
+    },
+  },
+);
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/index.html
+### START OF FILE ###
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/postcss.config.js
+### START OF FILE ###
+```js
+import tailwindcss from "@tailwindcss/postcss";
+import autoprefixer from "autoprefixer";
+
+export default {
+  plugins: [tailwindcss, autoprefixer],
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/App.css
+### START OF FILE ###
+```css
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/App.tsx
+### START OF FILE ###
+```tsx
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+} from "react-router-dom";
+import TaskDashboard from "./pages/TaskDashboard";
+import SystemHealth from "./pages/SystemHealth";
+import DeploymentLogs from "./pages/DeploymentLogs";
+import { Toaster } from "sonner";
+
+const App = () => {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-100">
+        <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
+          <div className="max-w-6xl mx-auto flex space-x-6">
+            <Link
+              to="/tasks"
+              className="text-indigo-600 font-medium hover:text-indigo-800"
+            >
+              Tasks
+            </Link>
+            <Link
+              to="/health"
+              className="text-indigo-600 font-medium hover:text-indigo-800"
+            >
+              System Health
+            </Link>
+            <Link
+              to="/deployments"
+              className="text-indigo-600 font-medium hover:text-indigo-800"
+            >
+              Deployment Logs
+            </Link>
+          </div>
+        </nav>
+
+        <Routes>
+          {/* Add default route redirect */}
+          <Route path="/" element={<Navigate to="/tasks" replace />} />
+
+          <Route path="/tasks" element={<TaskDashboard />} />
+          <Route path="/health" element={<SystemHealth />} />
+          <Route path="/deployments" element={<DeploymentLogs />} />
+        </Routes>
+        <Toaster richColors />
+      </div>
+    </Router>
+  );
+};
+
+export default App;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/PluginForm.tsx
+### START OF FILE ###
+```tsx
+// /frontend/src/components/PluginForm.tsx
+
+import React, { useState } from "react";
+
+// ✅ Exporting type for use elsewhere (tests, forms, etc.)
+export type PluginInputSpec = {
+  name: string;
+  label: string;
+  type: "text" | "number" | "boolean";
+  required?: boolean;
+};
+
+type PluginFormProps = {
+  pluginName: string;
+  inputSpec: PluginInputSpec[];
+  onSubmit: (inputs: Record<string, unknown>) => void;
+  status?: "idle" | "running" | "success" | "error";
+  result?: unknown;
+};
+
+const PluginForm: React.FC<PluginFormProps> = ({
+  pluginName,
+  inputSpec,
+  onSubmit,
+  status = "idle",
+  result,
+}) => {
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
+
+  const handleChange = (name: string, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form
+      className="p-4 rounded-xl border border-gray-300 shadow-md bg-white"
+      onSubmit={handleSubmit}
+    >
+      <h2 className="text-lg font-semibold mb-4">Run {pluginName} Plugin</h2>
+
+      {inputSpec.map(({ name, label, type, required }) => (
+        <div key={name} className="mb-3">
+          <label className="block font-medium mb-1">{label}</label>
+          {type === "boolean" ? (
+            <input
+              type="checkbox"
+              onChange={(e) => handleChange(name, e.target.checked)}
+              className="mr-2"
+            />
+          ) : (
+            <input
+              type={type}
+              required={required}
+              className="border px-3 py-2 rounded w-full"
+              onChange={(e) => handleChange(name, e.target.value)}
+            />
+          )}
+        </div>
+      ))}
+
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        disabled={status === "running"}
+      >
+        {status === "running" ? "Running..." : "Run Plugin"}
+      </button>
+
+      {status === "success" && result && (
+        <pre className="mt-4 bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap break-words overflow-x-auto">
+          {typeof result === "object"
+            ? JSON.stringify(result, null, 2)
+            : String(result)}
+        </pre>
+      )}
+
+      {status === "error" && (
+        <div className="mt-4 text-red-600 font-semibold">
+          Plugin execution failed.
+        </div>
+      )}
+    </form>
+  );
+};
+
+export default PluginForm;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/PluginHistory.tsx
+### START OF FILE ###
+```tsx
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { fetchPluginHistory } from "@/lib/services/pluginService";
+import { PluginExecution } from "@/lib/types/plugin";
+
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+export default function PluginHistory() {
+  const [history, setHistory] = useState<PluginExecution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const data = await fetchPluginHistory();
+        setHistory(data);
+      } catch (err) {
+        console.error("Error fetching plugin history:", err);
+        setError("Failed to load plugin history.");
+        setHistory([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHistory();
+
+    const handlePluginExecuted = () => loadHistory();
+    window.addEventListener("plugin-executed", handlePluginExecuted);
+
+    return () => {
+      window.removeEventListener("plugin-executed", handlePluginExecuted);
+    };
+  }, []);
+
+  const handleCopy = async (content: Record<string, unknown>) => {
+    try {
+      const text = JSON.stringify(content, null, 2);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard!");
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        toast.success("Copied manually!");
+      }
+    } catch {
+      toast.error("Failed to copy.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 text-gray-500 text-center animate-pulse">
+        Loading plugin history...
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-500 text-center">Error: {error}</div>;
+  }
+
+  return (
+    <Card className="p-6 mt-8">
+      <CardContent>
+        <h2 className="text-2xl font-bold mb-6">📜 Plugin Execution History</h2>
+
+        {history.length === 0 ? (
+          <div className="text-gray-500 text-center p-6 italic">
+            No plugin history available yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <Table className="min-w-full text-sm">
+              <TableHeader className="bg-gray-100">
+                <TableRow>
+                  <TableHead className="py-3 px-4 text-left">Plugin</TableHead>
+                  <TableHead className="py-3 px-4 text-left">Input</TableHead>
+                  <TableHead className="py-3 px-4 text-left">Output</TableHead>
+                  <TableHead className="py-3 px-4 text-center">Status</TableHead>
+                  <TableHead className="py-3 px-4 text-right">Timestamp</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {history.map((entry) => (
+                  <TableRow key={entry.id} className="hover:bg-gray-50 transition">
+                    <TableCell className="font-medium py-3 px-4 whitespace-nowrap">
+                      {entry.plugin_name}
+                    </TableCell>
+
+                    <TableCell className="relative group text-xs max-w-[280px] whitespace-pre-wrap break-words py-3 px-4">
+                      <span>{JSON.stringify(entry.input_data)}</span>
+                      <Button
+                        onClick={() => handleCopy(entry.input_data)}
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"
+                        title="Copy input"
+                      >
+                        📋
+                      </Button>
+                    </TableCell>
+
+                    <TableCell className="relative group text-xs max-w-[280px] whitespace-pre-wrap break-words py-3 px-4">
+                      <span>{JSON.stringify(entry.output_data)}</span>
+                      <Button
+                        onClick={() => handleCopy(entry.output_data)}
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"
+                        title="Copy output"
+                      >
+                        📋
+                      </Button>
+                    </TableCell>
+
+                    <TableCell className="text-center py-3 px-4">
+                      <Badge
+                        variant={
+                          entry.status === "success" ? "success" : "destructive"
+                        }
+                      >
+                        {entry.status}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="text-xs text-gray-600 whitespace-nowrap py-3 px-4 text-right">
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/PluginPanel.tsx
+### START OF FILE ###
+```tsx
+import React, { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { fetchPlugins, runPlugin } from "@/lib/services/pluginService";
+import { PluginSpec } from "@/lib/types/plugin";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function PluginPanel() {
+  const [plugins, setPlugins] = useState<PluginSpec[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [inputText, setInputText] = useState<string>("");
+  const [status, setStatus] = useState<
+    "idle" | "running" | "success" | "error"
+  >("idle");
+  const [result, setResult] = useState<string | null>(null);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const loadPlugins = async () => {
+      try {
+        const data = await fetchPlugins();
+        setPlugins(data);
+      } catch (err) {
+        console.error("Failed to fetch plugins:", err);
+      }
+    };
+    loadPlugins();
+  }, []);
+
+  const handleRunPlugin = async () => {
+    if (!selected) return;
+    setStatus("running");
+    setResult(null);
+
+    try {
+      const finalResult = await runPlugin(selected, inputText);
+      setResult(
+        typeof finalResult === "object"
+          ? JSON.stringify(finalResult, null, 2)
+          : finalResult,
+      );
+      setStatus("success");
+      toast.success(`Plugin "${selected}" executed successfully!`);
+      window.dispatchEvent(new Event("plugin-executed"));
+    } catch (err) {
+      console.error("Error running plugin:", err);
+      setStatus("error");
+      toast.error(`Failed to execute plugin "${selected}".`);
+    }
+  };
+
+  const handleSelectPlugin = (pluginName: string) => {
+    setSelected(pluginName);
+    setInputText("");
+    setResult(null);
+    setStatus("idle");
+
+    inputContainerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 300);
+  };
+
+  const handleCopyResult = async () => {
+    if (!result) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(result);
+        toast.success("Copied result to clipboard!");
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = result;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        toast.success("Copied manually!");
+      }
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy to clipboard.");
+    }
+  };
+
+  return (
+    <Card className="p-6 space-y-8 bg-white rounded-lg shadow-sm">
+      <CardContent className="space-y-8">
+        <h2 className="text-2xl font-bold text-center">🧩 Plugin Panel</h2>
+
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {plugins.map((plugin) => (
+            <Card
+              key={plugin.module || plugin.name}
+              onClick={() => handleSelectPlugin(plugin.module || plugin.name)}
+              className={`cursor-pointer transition p-4 text-center ${
+                selected === (plugin.module || plugin.name)
+                  ? "ring-2 ring-blue-500"
+                  : ""
+              }`}
+            >
+              <p className="font-semibold">{plugin.name}</p>
+              <p className="text-xs text-gray-500">{plugin.description}</p>
+            </Card>
+          ))}
+        </div>
+
+        {selected && (
+          <div
+            ref={inputContainerRef}
+            className="space-y-4 mt-6 max-w-2xl mx-auto"
+            id="plugin-input-form"
+          >
+            <h3 className="text-lg font-medium text-center">
+              Input for: {selected}
+            </h3>
+
+            <Input
+              ref={inputRef}
+              placeholder="Enter input..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              disabled={status === "running"}
+            />
+
+            <div className="flex justify-center">
+              <Button onClick={handleRunPlugin} disabled={status === "running"}>
+                {status === "running" && (
+                  <svg
+                    className="animate-spin h-4 w-4 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                )}
+                {status === "running" ? "Running..." : "Run Plugin"}
+              </Button>
+            </div>
+
+            {status === "success" && result && (
+              <div className="relative mt-6 bg-gray-100 rounded p-4 text-xs overflow-x-auto max-w-full">
+                <Button
+                  onClick={handleCopyResult}
+                  variant="secondary"
+                  size="sm"
+                  className="absolute top-2 right-2 text-xs"
+                >
+                  📋 Copy
+                </Button>
+                <pre className="whitespace-pre-wrap break-words">{result}</pre>
+              </div>
+            )}
+
+            {status === "error" && (
+              <p className="mt-4 text-center text-red-600 font-semibold">
+                Error executing plugin.
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/table/PluginHistoryRow.tsx
+### START OF FILE ###
+```tsx
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+interface PluginHistoryRowProps {
+  id: number;
+  plugin_name: string;
+  input_data: Record<string, any>;
+  output_data: Record<string, any>;
+  status: string;
+  timestamp: string;
+}
+
+const PluginHistoryRow = ({
+  id,
+  plugin_name,
+  input_data,
+  output_data,
+  status,
+  timestamp,
+}: PluginHistoryRowProps) => {
+  const handleCopy = async (content: Record<string, unknown>) => {
+    try {
+      const text = JSON.stringify(content, null, 2);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard!");
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        toast.success("Copied manually!");
+      }
+    } catch {
+      toast.error("Failed to copy.");
+    }
+  };
+
+  return (
+    <tr key={`plugin-${id}`} className="hover:bg-gray-50 transition text-sm">
+      <td className="border px-4 py-3 whitespace-nowrap">{plugin_name}</td>
+
+      <td className="relative group border px-4 py-3 whitespace-pre-wrap break-words max-w-[280px] text-left text-xs">
+        <span>{JSON.stringify(input_data)}</span>
+        <Button
+          onClick={() => handleCopy(input_data)}
+          size="icon"
+          variant="ghost"
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"
+          title="Copy input"
+        >
+          📋
+        </Button>
+      </td>
+
+      <td className="relative group border px-4 py-3 whitespace-pre-wrap break-words max-w-[280px] text-left text-xs">
+        <span>{JSON.stringify(output_data)}</span>
+        <Button
+          onClick={() => handleCopy(output_data)}
+          size="icon"
+          variant="ghost"
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"
+          title="Copy output"
+        >
+          📋
+        </Button>
+      </td>
+
+      <td className="border px-4 py-3 text-center">
+        <Badge
+          variant={
+            status === "success" ? "success" : status === "error" ? "destructive" : "outline"
+          }
+        >
+          {status}
+        </Badge>
+      </td>
+
+      <td className="border px-4 py-3 text-right text-xs text-gray-600 whitespace-nowrap">
+        {new Date(timestamp).toLocaleString()}
+      </td>
+    </tr>
+  );
+};
+
+export default PluginHistoryRow;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/table/Table.tsx
+### START OF FILE ###
+```tsx
+interface TableProps {
+    headers: string[];
+    children: React.ReactNode;
+  }
+  
+  const Table = ({ headers, children }: TableProps) => (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow">
+        <thead className="bg-gray-100">
+          <tr>
+            {headers.map((header, index) => (
+              <th
+                key={index}
+                className="border px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider"
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+  
+  export default Table;
+  ```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/table/TaskRow.tsx
+### START OF FILE ###
+```tsx
+import StatusBadge from "@/components/ui/status-badge";
+
+interface TaskRowProps {
+  task_id?: number;
+  description: string;
+  status: string;
+}
+
+const TaskRow = ({ task_id, description, status }: TaskRowProps) => (
+  <tr className="transition hover:bg-gray-50 text-sm">
+    <td className="border px-4 py-3 text-center whitespace-nowrap">
+      {task_id}
+    </td>
+    <td className="border px-4 py-3 text-left">{description}</td>
+    <td className="border px-4 py-3 text-center">
+      <StatusBadge status={status} />
+    </td>
+  </tr>
+);
+
+export default TaskRow;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/TaskTable.tsx
+### START OF FILE ###
+```tsx
+import { useState, useEffect } from "react";
+import { fetchTasks } from "../lib/services/taskService";
+import Table from "./table/Table";
+import TaskRow from "./table/TaskRow";
+
+interface Task {
+  task_id: number;
+  description: string;
+  status: string;
+}
+
+const TaskTable = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const data = await fetchTasks();
+        console.log("Fetched tasks:", data);
+        setTasks(data);
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTasks();
+  }, []);
+
+  if (loading) {
+    return (
+      <p className="text-center mt-8 text-lg text-gray-600">Loading tasks...</p>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6 text-center">Task Dashboard</h1>
+      <Table headers={["ID", "Description", "Status"]}>
+        {tasks.map((task) => (
+          <TaskRow key={task.task_id} {...task} />
+        ))}
+      </Table>
+    </div>
+  );
+};
+
+export default TaskTable;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/badge.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+import { badgeVariants } from "@/components/ui/badge-variants"; // ✅ UPDATED
+
+function Badge({
+  className,
+  variant,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "span";
+
+  return (
+    <Comp
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  );
+}
+
+export { Badge };
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/badge-variants.ts
+### START OF FILE ###
+```ts
+import { cva } from "class-variance-authority";
+
+export const badgeVariants = cva(
+  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+        destructive:
+          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        success:
+          "border-transparent bg-green-500 text-white [a&]:hover:bg-green-600",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/button.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button-variants"; // ✅ UPDATED
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "button";
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button };
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/button-variants.ts
+### START OF FILE ###
+```ts
+import { cva } from "class-variance-authority";
+
+export const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  },
+);
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/card.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("leading-none font-semibold", className)}
+      {...props}
+    />
+  );
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6", className)}
+      {...props}
+    />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/checkbox.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { CheckIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Checkbox({
+  className,
+  ...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="flex items-center justify-center text-current transition-none"
+      >
+        <CheckIcon className="size-3.5" />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  );
+}
+
+export { Checkbox };
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/input.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Input };
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/status-badge.tsx
+### START OF FILE ###
+```tsx
+import { Badge } from "@/components/ui/badge";
+
+interface StatusBadgeProps {
+  status: string;
+}
+
+const StatusBadge = ({ status }: StatusBadgeProps) => {
+  const variant =
+    status === "success"
+      ? "success"
+      : status === "error"
+      ? "destructive"
+      : "outline";
+
+  return <Badge variant={variant}>{status}</Badge>;
+};
+
+export default StatusBadge;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/components/ui/table.tsx
+### START OF FILE ###
+```tsx
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Table({ className, ...props }: React.ComponentProps<"table">) {
+  return (
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+    >
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
+    </div>
+  );
+}
+
+function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn("[&_tr]:border-b", className)}
+      {...props}
+    />
+  );
+}
+
+function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+  return (
+    <tbody
+      data-slot="table-body"
+      className={cn("[&_tr:last-child]:border-0", className)}
+      {...props}
+    />
+  );
+}
+
+function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+  return (
+    <tfoot
+      data-slot="table-footer"
+      className={cn(
+        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+  return (
+    <tr
+      data-slot="table-row"
+      className={cn(
+        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+  return (
+    <th
+      data-slot="table-head"
+      className={cn(
+        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn(
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableCaption({
+  className,
+  ...props
+}: React.ComponentProps<"caption">) {
+  return (
+    <caption
+      data-slot="table-caption"
+      className={cn("text-muted-foreground mt-4 text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/index.css
+### START OF FILE ###
+```css
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/services/api.ts
+### START OF FILE ###
+```ts
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://192.168.50.142:8000",
+});
+
+export default api;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/services/healthService.ts
+### START OF FILE ###
+```ts
+import api from "./api";
+
+export const fetchHealthStatus = async () => {
+  const response = await api.get("/health");
+  return response.data;
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/services/logService.ts
+### START OF FILE ###
+```ts
+import api from "./api";
+
+export const fetchDeploymentLogs = async () => {
+  const response = await api.get("/logs");
+  return response.data;
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/services/pluginService.ts
+### START OF FILE ###
+```ts
+import axios from "axios";
+
+export const fetchPlugins = async () => {
+  const response = await axios.get("/plugins");
+  return response.data.plugins ?? response.data;
+};
+
+export const fetchPluginHistory = async () => {
+  const response = await axios.get("/plugin/history");
+  return response.data.executions ?? response.data;
+};
+
+export const runPlugin = async (pluginName: string, inputText: string) => {
+  const response = await axios.post(`/plugins/run/${pluginName}`, {
+    input_text: inputText,
+  });
+  return response.data.result;
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/services/taskService.ts
+### START OF FILE ###
+```ts
+import axios from "axios";
+
+// ✅ Fetch all tasks
+export const fetchTasks = async () => {
+  const response = await axios.get("/status/all"); // Matches FastAPI GET route
+  return response.data;
+};
+
+// ✅ Retry a task by ID
+export const retryTask = async (taskId) => {
+  try {
+    const response = await axios.post(`/retry/${taskId}`);
+    return response.data;
+  } catch (err) {
+    console.error("Error retrying task:", err);
+    throw err;
+  }
+};
+
+// ✅ Create a new task
+export const createTask = async (description, model_used = "DeepSeek") => {
+  try {
+    const response = await axios.post("/task", {
+      description,
+      model_used,
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error("Error creating task:", err);
+    throw err;
+  }
+};
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/types/plugin.ts
+### START OF FILE ###
+```ts
+export type PluginStatus = "success" | "error" | "pending" | "skipped";
+
+export interface PluginExecution {
+  id: number;
+  plugin_name: string;
+  input_data: Record<string, unknown>;
+  output_data: Record<string, unknown>;
+  status: PluginStatus;
+  timestamp: string;
+}
+
+export interface PluginSpec {
+  name: string;
+  description: string;
+  module: string;
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/utils.ts
+### START OF FILE ###
+```ts
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/main.tsx
+### START OF FILE ###
+```tsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.js";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/pages/DeploymentLogs.tsx
+### START OF FILE ###
+```tsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+
+const DeploymentLogs: React.FC = () => {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [selectedLog, setSelectedLog] = useState<string | null>(null);
+  const [logContent, setLogContent] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingLogs, setLoadingLogs] = useState<boolean>(true);
+  const [loadingContent, setLoadingContent] = useState<boolean>(false);
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const response = await axios.get<string[]>("/logs");
+      console.log("LOGS RESPONSE:", response.data);
+      setLogs(response.data);
+      setError(null);
+    } catch (error) {
+      console.error("Failed to load logs:", error);
+      setError("Failed to load logs.");
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const fetchLogContent = async (filename: string) => {
+    setLoadingContent(true);
+    try {
+      const response = await axios.get(`/logs/${filename}`, {
+        responseType: "text",
+      });
+      setSelectedLog(filename);
+      setLogContent(response.data);
+    } catch {
+      setError("Failed to load log content.");
+    } finally {
+      setLoadingContent(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  return (
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Deployment Logs</h1>
+
+      <button
+        onClick={fetchLogs}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Refresh Log List
+      </button>
+
+      {error && <p className="text-red-500">{error}</p>}
+
+      {loadingLogs ? (
+        <p className="text-gray-500">Loading logs...</p>
+      ) : logs.length === 0 ? (
+        <p className="text-gray-500">No log files found.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <h2 className="font-semibold mb-2">Available Logs</h2>
+            <ul className="space-y-2">
+              {logs.map((log) => (
+                <li key={log}>
+                  <button
+                    onClick={() => fetchLogContent(log)}
+                    className="text-blue-700 underline hover:text-blue-900"
+                  >
+                    {log}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="md:col-span-2">
+            {selectedLog && (
+              <>
+                <h2 className="font-semibold mb-2">
+                  Contents of: {selectedLog}
+                </h2>
+                <pre className="bg-gray-100 p-4 rounded overflow-x-auto text-sm whitespace-pre-wrap max-h-[60vh]">
+                  {loadingContent
+                    ? "Loading log content..."
+                    : logContent?.trim()
+                      ? logContent
+                      : "Log file is empty or failed to load."}
+                </pre>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DeploymentLogs;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/pages/SystemHealth.tsx
+### START OF FILE ###
+```tsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+
+interface HealthResponse {
+  backend: string;
+  model: string;
+}
+
+const SystemHealth: React.FC = () => {
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchHealth = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get<HealthResponse>("/health"); // ✅ Type API response
+      setHealth(res.data);
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Health fetch error:", err); // ✅ Always log unknown
+      setError("Failed to fetch health status");
+      setHealth(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">System Health</h1>
+
+      {loading && <p className="text-gray-500">Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {health && (
+        <div className="space-y-2">
+          <HealthItem label="Backend" status={health.backend} />
+          <HealthItem label="Model" status={health.model} />
+        </div>
+      )}
+
+      <button
+        onClick={fetchHealth}
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Refresh
+      </button>
+    </div>
+  );
+};
+
+const HealthItem: React.FC<{ label: string; status: string }> = ({
+  label,
+  status,
+}) => {
+  const colorClass =
+    status.trim().toLowerCase() === "ok" ? "text-green-600" : "text-red-600";
+
+  return (
+    <p className={colorClass}>
+      {label}: <span className="font-semibold">{status}</span>
+    </p>
+  );
+};
+
+export default SystemHealth;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/pages/TaskDashboard.tsx
+### START OF FILE ###
+```tsx
+import PluginPanel from "@/components/PluginPanel";
+import TaskTable from "@/components/TaskTable";
+import PluginHistory from "@/components/PluginHistory"; // ✅ Add this import
+
+const TaskDashboard = () => {
+  return (
+    <div className="bg-[#f6f8fa] min-h-screen py-10 px-4">
+      <div className="max-w-6xl mx-auto bg-white shadow-sm rounded-xl p-6 space-y-6">
+        <h1 className="text-2xl font-semibold text-gray-800 mb-4">
+          Task Dashboard
+        </h1>
+
+        <TaskTable />
+
+        <PluginPanel />
+
+        {/* ✅ Add Plugin History */}
+        <div className="mt-8">
+          <PluginHistory />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TaskDashboard;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/__tests__/DeploymentLogs.test.tsx
+### START OF FILE ###
+```tsx
+import "@testing-library/jest-dom";
+import React from "react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import axios from "axios";
+import DeploymentLogs from "../../src/pages/DeploymentLogs";
+
+jest.mock("axios");
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe("DeploymentLogs", () => {
+  const mockLogList = ["test.log", "deployment_2025-04-22.log"];
+  const mockLogContent = "🚀 Deployment complete\n✅ System check passed";
+
+  beforeEach(() => {
+    mockedAxios.get.mockReset();
+  });
+
+  it("renders logs and shows content when clicked", async () => {
+    mockedAxios.get.mockImplementation((url) => {
+      if (url === "/logs") return Promise.resolve({ data: mockLogList });
+      if (url === "/logs/test.log")
+        return Promise.resolve({ data: mockLogContent });
+      return Promise.reject(new Error("Unexpected URL"));
+    });
+
+    render(<DeploymentLogs />);
+
+    // Wait for log list
+    await waitFor(() =>
+      expect(screen.getByText("test.log")).toBeInTheDocument(),
+    );
+
+    // Click on log
+    fireEvent.click(screen.getByText("test.log"));
+
+    // Wait for content
+    await waitFor(() =>
+      expect(screen.getByText(/Deployment complete/i)).toBeInTheDocument(),
+    );
+  });
+});
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/__tests__/LogViewer.integration.test.ts
+### START OF FILE ###
+```ts
+import axios from "axios";
+
+describe("Log Viewer API", () => {
+  const BASE = "http://localhost:8000";
+
+  it("should return a list of log files", async () => {
+    const res = await axios.get(`${BASE}/logs`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.data)).toBe(true);
+    expect(res.data.some((name) => name.endsWith(".log"))).toBe(true);
+  });
+
+  it("should return contents of a real log file", async () => {
+    const { data: logs } = await axios.get(`${BASE}/logs`);
+    const testLog = logs.find(
+      (name: string) => name.includes("test") || name.includes("deployment"),
+    );
+    expect(testLog).toBeDefined();
+
+    const content = await axios.get(`${BASE}/logs/${testLog}`, {
+      responseType: "text",
+    });
+    expect(typeof content.data).toBe("string");
+    expect(content.data.length).toBeGreaterThan(0);
+  });
+});
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/__tests__/PluginForm.test.tsx
+### START OF FILE ###
+```tsx
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import PluginForm, { PluginInputSpec } from "../components/PluginForm"; // ✅ Import both
+
+describe("PluginForm", () => {
+  const mockSpec: PluginInputSpec[] = [
+    { name: "input1", label: "Text Field", type: "text", required: true },
+    { name: "count", label: "Count", type: "number" },
+    { name: "toggle", label: "Enable", type: "boolean" },
+  ];
+
+  const mockSubmit = jest.fn();
+
+  beforeEach(() => {
+    render(
+      <PluginForm
+        pluginName="TestPlugin"
+        inputSpec={mockSpec}
+        onSubmit={mockSubmit}
+        status="idle"
+      />,
+    );
+  });
+
+  it("renders all input fields correctly", () => {
+    expect(screen.getByLabelText("Text Field")).toBeInTheDocument();
+    expect(screen.getByLabelText("Count")).toBeInTheDocument();
+    expect(screen.getByLabelText("Enable")).toBeInTheDocument();
+  });
+
+  it("submits form with input values", () => {
+    fireEvent.change(screen.getByLabelText("Text Field"), {
+      target: { value: "test input" },
+    });
+    fireEvent.change(screen.getByLabelText("Count"), {
+      target: { value: "42" },
+    });
+    fireEvent.click(screen.getByLabelText("Enable"));
+    fireEvent.click(screen.getByText("Run Plugin"));
+
+    expect(mockSubmit).toHaveBeenCalledWith({
+      input1: "test input",
+      count: 42,
+      toggle: true,
+    });
+  });
+});
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/__tests__/SystemHealth.test.tsx
+### START OF FILE ###
+```tsx
+import React from "react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import axios from "axios";
+import "@testing-library/jest-dom";
+import SystemHealth from "../pages/SystemHealth";
+
+jest.mock("axios");
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe("SystemHealth", () => {
+  beforeEach(() => {
+    mockedAxios.get.mockReset();
+  });
+
+  it("displays loading then health status", async () => {
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { backend: "OK", model: "OK" },
+    });
+
+    render(<SystemHealth />);
+
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          (content, element) =>
+            element?.textContent?.toLowerCase() === "backend: ok",
+        ),
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(
+          (content, element) =>
+            element?.textContent?.toLowerCase() === "model: ok",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("displays error message on fetch failure", async () => {
+    mockedAxios.get.mockRejectedValueOnce(new Error("Network error"));
+
+    render(<SystemHealth />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed to fetch/i)).toBeInTheDocument();
+    });
+  });
+
+  it("triggers manual refresh", async () => {
+    // First call returns OK
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { backend: "OK", model: "OK" },
+    });
+
+    render(<SystemHealth />);
+
+    // Wait for initial health
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          (_, element) => element?.textContent?.toLowerCase() === "model: ok",
+        ),
+      ).toBeInTheDocument(),
+    );
+
+    // Second call returns FAIL
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { backend: "OK", model: "FAIL" },
+    });
+
+    // Trigger refresh
+    fireEvent.click(screen.getByText(/refresh/i));
+
+    // Wait for refreshed health
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          (_, element) => element?.textContent?.toLowerCase() === "model: fail",
+        ),
+      ).toBeInTheDocument(),
+    );
+  });
+});
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/vite-env.d.ts
+### START OF FILE ###
+```ts
+/// <reference types="vite/client" />
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/tailwind.config.ts
+### START OF FILE ###
+```ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+export default config;
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/vite.config.ts
+### START OF FILE ###
+```ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      "/logs": "http://localhost:8000",
+      "/health": "http://localhost:8000",
+      "/status": "http://localhost:8000",
+      "/retry": "http://localhost:8000",
+      "/plugins": "http://localhost:8000",
+      "/plugin": "http://localhost:8000", // ✅ Added: fixes plugin history errors
+    },
+    fs: {
+      allow: [".."], // ✅ allows serving one level up
+    },
+  },
+  appType: "spa", // ✅ ensures index.html fallback
+  build: {
+    rollupOptions: {
+      input: "/index.html", // ✅ correct for single page app
+    },
+  },
+  resolve: {
+    alias: {
+      "@": "/src", // ✅ clean import alias for /src
+    },
+  },
+});
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/scripts/dev/init_db.py
+### START OF FILE ###
+```py
+from app.db import engine, Base
+from app.models import Task  # ✅ Ensures model is loaded before create_all
+
+if __name__ == "__main__":
+    print("🔧 Creating all tables in database.db...")
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tables created.")
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/scripts/dev/insert_failed_task.py
+### START OF FILE ###
+```py
+# insert_failed_task.py
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from app.models import Task
+from app.db import SessionLocal
+
+def insert_failed_task():
+    db = SessionLocal()
+
+    task = Task(
+        description="Simulated failure task for healing test",
+        model_used="DeepSeek",
+        generated_code=None,
+        status="failed"
+    )
+
+    db.add(task)
+    db.commit()
+    print(f"✅ Inserted failed task with ID {task.id}")
+    db.close()
+
+if __name__ == "__main__":
+    insert_failed_task()
+```
+### END OF FILE ###
+

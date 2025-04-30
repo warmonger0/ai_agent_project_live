@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from app.core import error_handler
 from app.core.config import settings
 from app.api.v1 import api_router
-from app.db import engine, Base
+from app.db.session import engine, Base
 from app.services.healing_loop import healing_loop
 import asyncio
 

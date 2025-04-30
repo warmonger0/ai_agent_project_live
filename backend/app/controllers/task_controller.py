@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db import get_db  # ✅ Now imported from shared db.py
-from app.services import task_db
+from app.db.session import get_db  # ✅ now from db/session.py
+from app.db import tasks as task_db  # ✅ from db/tasks.py
 from app.models import Task, PluginExecution
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
@@ -13,7 +13,6 @@ class TaskCreate(BaseModel):
     description: str
     model_used: str
 
-
 # --- TASK ROUTES ---
 
 @router.post("/tasks", response_model=dict)
@@ -24,7 +23,6 @@ def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
         "status": task.status,
         "created_at": task.created_at
     }
-
 
 @router.get("/tasks", response_model=List[dict])
 def get_all_tasks(db: Session = Depends(get_db)):
@@ -41,7 +39,6 @@ def get_all_tasks(db: Session = Depends(get_db)):
         for t in tasks
     ]
 
-
 @router.get("/tasks/{task_id}", response_model=dict)
 def get_task(task_id: int, db: Session = Depends(get_db)):
     task = task_db.get_task(db, task_id)
@@ -55,7 +52,6 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
         "created_at": task.created_at,
         "completed_at": task.completed_at,
     }
-
 
 @router.patch("/tasks/{task_id}", response_model=dict)
 def update_task(task_id: int, status: str, error_message: Optional[str] = None, db: Session = Depends(get_db)):
@@ -73,7 +69,6 @@ def update_task(task_id: int, status: str, error_message: Optional[str] = None, 
         "completed_at": task.completed_at,
     }
 
-
 @router.post("/retry/{task_id}")
 def retry_task(task_id: int, db: Session = Depends(get_db)):
     task = task_db.get_task(db, task_id)
@@ -83,7 +78,6 @@ def retry_task(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Only errored tasks can be retried")
     task = task_db.update_task_status(db, task_id, status="pending", error_message=None, completed=False)
     return {"message": f"Task {task_id} status set to pending."}
-
 
 # --- PLUGIN EXECUTION HISTORY ---
 
@@ -103,3 +97,13 @@ def get_plugin_execution_history(plugin_name: Optional[str] = None, db: Session 
         }
         for e in executions
     ]
+
+# --- Status List for UI Dropdown ---
+@router.get("/tasks/status/all", response_model=List[str])
+def get_all_statuses():
+    return ["pending", "running", "success", "error"]
+
+# --- Alias to match frontend call ---
+@router.get("/status/all", response_model=List[str])
+def get_status_alias():
+    return get_all_statuses()

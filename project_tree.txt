@@ -1,0 +1,210 @@
+.
+├── backend
+│   ├── alembic
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   ├── alembic.ini
+│   ├── app
+│   │   ├── api
+│   │   │   └── v1
+│   │   ├── controllers
+│   │   │   ├── deployment_handler.py
+│   │   │   ├── healing_controller.py
+│   │   │   ├── health_controller.py
+│   │   │   ├── __init__.py
+│   │   │   ├── logs_controller.py
+│   │   │   ├── plugin_controller.py
+│   │   │   ├── ssh_client.py
+│   │   │   ├── task_controller.py
+│   │   │   ├── test_deployment_handler.py
+│   │   │   └── test_ssh_deploy.py
+│   │   ├── core
+│   │   │   ├── api_response.py
+│   │   │   ├── config.py
+│   │   │   └── error_handler.py
+│   │   ├── database.db
+│   │   ├── db.py
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── plugins
+│   │   │   ├── echo_plugin.py
+│   │   │   ├── plugin_loader.py
+│   │   │   └── plugin_runner.py
+│   │   ├── schemas.py
+│   │   ├── services
+│   │   │   ├── healing_loop.py
+│   │   │   └── task_db.py
+│   │   └── utils
+│   │       ├── model_router.py
+│   │       ├── monitor.py
+│   │       ├── ollama_healthcheck.py
+│   │       └── plugin_logger.py
+│   ├── backend_tree.txt
+│   ├── database.db
+│   ├── healing.log
+│   ├── migrations
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   │       ├── 2d69244356e1_add_error_message_timestamp_completed_.py
+│   │       └── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
+│   ├── plugins
+│   │   └── echo_plugin.py
+│   ├── .pytest_cache
+│   │   ├── CACHEDIR.TAG
+│   │   ├── .gitignore
+│   │   ├── README.md
+│   │   └── v
+│   │       └── cache
+│   ├── scripts
+│   │   ├── init_db.py
+│   │   ├── insert_failed_task.py
+│   │   └── inspect_db.py
+│   └── tests
+│       ├── conftest.py
+│       ├── integration
+│       │   └── test_task_routes.py
+│       └── unit
+│           ├── test_models.py
+│           ├── test_plugin_history.py
+│           ├── test_plugin_loader.py
+│           ├── test_ssh_client.py
+│           └── test_task_db.py
+├── changelog.md
+├── deployments
+│   ├── last_build
+│   │   ├── dummy_app
+│   │   │   └── app.py
+│   │   └── .gitkeep
+│   └── logs
+│       ├── deployment_2025-04-22T03-32-37.log
+│       ├── deployment_2025-04-25T10-47-39.log
+│       ├── deployment_2025-04-25T10-55-19.log
+│       ├── deployment_2025-04-25T10-56-59.log
+│       ├── deployment_2025-04-25T10-58-22.log
+│       ├── deployment_2025-04-25T11-04-23.log
+│       ├── deployment_2025-04-25T11-09-02.log
+│       ├── deployment_2025-04-25T11-11-43.log
+│       ├── deployment_2025-04-25T11-16-56.log
+│       ├── deployment_2025-04-25T11-24-12.log
+│       ├── deployment_2025-04-25T11-25-44.log
+│       ├── .gitkeep
+│       └── test.log
+├── docker
+│   └── deepseek
+│       ├── docker-compose.yml
+│       ├── Dockerfile
+│       └── models
+├── docker-compose.yml
+├── .env
+├── frontend
+│   ├── components.json
+│   ├── eslint.config.js
+│   ├── frontend_tree.txt
+│   ├── .gitignore
+│   ├── index.html
+│   ├── jest.config.mjs
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── public
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── assets
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── PluginForm.tsx
+│   │   │   ├── PluginHistory.tsx
+│   │   │   ├── PluginPanel.tsx
+│   │   │   ├── table
+│   │   │   ├── TaskTable.tsx
+│   │   │   └── ui
+│   │   ├── index.css
+│   │   ├── lib
+│   │   │   ├── services
+│   │   │   ├── types
+│   │   │   └── utils.ts
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── DeploymentLogs.tsx
+│   │   │   ├── SystemHealth.tsx
+│   │   │   └── TaskDashboard.tsx
+│   │   ├── __tests__
+│   │   │   ├── DeploymentLogs.test.tsx
+│   │   │   ├── LogViewer.integration.test.ts
+│   │   │   ├── PluginForm.test.tsx
+│   │   │   └── SystemHealth.test.tsx
+│   │   └── vite-env.d.ts
+│   ├── tailwind.config.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── .gitignore
+├── healing.log
+├── models
+│   ├── configs
+│   │   └── model_registry.json
+│   └── scripts
+│       └── start_models.sh
+├── pipwrapper.sh
+├── project_folder_tree.txt
+├── project_tree.txt
+├── .pytest_cache
+│   ├── CACHEDIR.TAG
+│   ├── .gitignore
+│   ├── README.md
+│   └── v
+│       └── cache
+│           ├── lastfailed
+│           ├── nodeids
+│           └── stepwise
+├── pytest.ini
+├── README.md
+├── requirements-dev.txt
+├── requirements.txt
+├── scripts
+│   └── dev_activate.sh
+├── start_dev.sh
+├── start_prod.sh
+├── system_info
+│   ├── nuc_system_info.txt
+│   └── README.md
+├── tests
+│   └── integration
+│       └── .gitkeep
+└── .venv
+    ├── bin
+    │   ├── activate
+    │   ├── activate.csh
+    │   ├── activate.fish
+    │   ├── Activate.ps1
+    │   ├── httpx
+    │   ├── normalizer
+    │   ├── pip
+    │   ├── pip3
+    │   ├── pip3.12
+    │   ├── py.test
+    │   ├── pytest
+    │   ├── python -> python3
+    │   ├── python3 -> /usr/bin/python3
+    │   ├── python3.12 -> python3
+    │   └── uvicorn
+    ├── include
+    │   ├── python3.12
+    │   └── site
+    │       └── python3.12
+    ├── lib
+    │   └── python3.12
+    │       └── site-packages
+    ├── lib64 -> lib
+    └── pyvenv.cfg
+
+61 directories, 147 files
