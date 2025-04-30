@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src", // ✅ Add this
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./*"]
     },
     "jsx": "react-jsx",
     "esModuleInterop": true,

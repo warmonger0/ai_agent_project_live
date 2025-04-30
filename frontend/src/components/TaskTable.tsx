@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchTasks } from "../lib/services/taskService";
+import Table from "./table/Table";
+import TaskRow from "./table/TaskRow";
 
 interface Task {
   task_id: number;
@@ -15,7 +17,7 @@ const TaskTable = () => {
     const loadTasks = async () => {
       try {
         const data = await fetchTasks();
-        console.log("Fetched tasks:", data); // Optional for debug
+        console.log("Fetched tasks:", data);
         setTasks(data);
       } catch (error) {
         console.error("Error loading tasks:", error);
@@ -36,45 +38,11 @@ const TaskTable = () => {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6 text-center">Task Dashboard</h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                ID
-              </th>
-              <th className="border px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                Description
-              </th>
-              <th className="border px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task: Task, index: number) => (
-              <tr
-                key={`task-${task.task_id}`}
-                className={
-                  index % 2 === 0
-                    ? "bg-white"
-                    : "bg-gray-50 hover:bg-gray-100 transition"
-                }
-              >
-                <td className="border px-6 py-4 text-base leading-6 text-gray-800">
-                  {task.task_id}
-                </td>
-                <td className="border px-6 py-4 text-base leading-6 text-gray-800">
-                  {task.description}
-                </td>
-                <td className="border px-6 py-4 text-base leading-6 text-gray-800">
-                  {task.status}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table headers={["ID", "Description", "Status"]}>
+        {tasks.map((task) => (
+          <TaskRow key={task.task_id} {...task} />
+        ))}
+      </Table>
     </div>
   );
 };

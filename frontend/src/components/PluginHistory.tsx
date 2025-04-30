@@ -88,41 +88,26 @@ export default function PluginHistory() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-            <Table className="min-w-full text-xs sm:text-sm">
+            <Table className="min-w-full text-sm">
               <TableHeader className="bg-gray-100">
                 <TableRow>
-                  <TableHead className="py-2 px-2 sm:py-3 sm:px-4 text-left">
-                    Plugin
-                  </TableHead>
-                  <TableHead className="py-2 px-2 sm:py-3 sm:px-4 text-left">
-                    Input
-                  </TableHead>
-                  <TableHead className="py-2 px-2 sm:py-3 sm:px-4 text-left">
-                    Output
-                  </TableHead>
-                  <TableHead className="py-2 px-2 sm:py-3 sm:px-4 text-center">
-                    Status
-                  </TableHead>
-                  <TableHead className="py-2 px-2 sm:py-3 sm:px-4 text-right">
-                    Timestamp
-                  </TableHead>
+                  <TableHead className="py-3 px-4 text-left">Plugin</TableHead>
+                  <TableHead className="py-3 px-4 text-left">Input</TableHead>
+                  <TableHead className="py-3 px-4 text-left">Output</TableHead>
+                  <TableHead className="py-3 px-4 text-center">Status</TableHead>
+                  <TableHead className="py-3 px-4 text-right">Timestamp</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {history.map((entry) => (
-                  <TableRow
-                    key={entry.id}
-                    className="hover:bg-gray-50 transition"
-                  >
-                    <TableCell className="font-semibold py-2 px-2 sm:px-4">
+                  <TableRow key={entry.id} className="hover:bg-gray-50 transition">
+                    <TableCell className="font-medium py-3 px-4 whitespace-nowrap">
                       {entry.plugin_name}
                     </TableCell>
 
-                    <TableCell className="relative group text-[10px] sm:text-xs max-w-[200px] truncate py-2 px-2 sm:px-4">
-                      <span title={JSON.stringify(entry.input_data)}>
-                        {JSON.stringify(entry.input_data)}
-                      </span>
+                    <TableCell className="relative group text-xs max-w-[280px] whitespace-pre-wrap break-words py-3 px-4">
+                      <span>{JSON.stringify(entry.input_data)}</span>
                       <Button
                         onClick={() => handleCopy(entry.input_data)}
                         size="icon"
@@ -134,10 +119,8 @@ export default function PluginHistory() {
                       </Button>
                     </TableCell>
 
-                    <TableCell className="relative group text-[10px] sm:text-xs max-w-[200px] truncate py-2 px-2 sm:px-4">
-                      <span title={JSON.stringify(entry.output_data)}>
-                        {JSON.stringify(entry.output_data)}
-                      </span>
+                    <TableCell className="relative group text-xs max-w-[280px] whitespace-pre-wrap break-words py-3 px-4">
+                      <span>{JSON.stringify(entry.output_data)}</span>
                       <Button
                         onClick={() => handleCopy(entry.output_data)}
                         size="icon"
@@ -149,7 +132,7 @@ export default function PluginHistory() {
                       </Button>
                     </TableCell>
 
-                    <TableCell className="text-center py-2 px-2 sm:px-4">
+                    <TableCell className="text-center py-3 px-4">
                       <Badge
                         variant={
                           entry.status === "success" ? "success" : "destructive"
@@ -159,7 +142,7 @@ export default function PluginHistory() {
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="text-xs text-gray-600 whitespace-nowrap py-2 px-2 sm:px-4 text-right">
+                    <TableCell className="text-xs text-gray-600 whitespace-nowrap py-3 px-4 text-right">
                       {new Date(entry.timestamp).toLocaleString()}
                     </TableCell>
                   </TableRow>

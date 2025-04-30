@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings  # ✅ Import config
 
 # Import routers
 from app.controllers import (
@@ -21,11 +22,17 @@ import asyncio
 app = FastAPI()
 
 # ----------------------------------------
-# CORS Middleware Setup (open during dev)
+# CORS Middleware Setup (now using env var)
 # ----------------------------------------
+allowed_origins = (
+    [settings.frontend_url]
+    if settings.app_env == "production"
+    else ["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 🔐 TODO: Restrict origins before production!
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,14 +52,12 @@ app.include_router(plugin_router)
 # ----------------------------------------
 @app.get("/")
 async def root():
-    return {"message": "Local AI Agent Brain Running"}
+    return {"message": f"Local AI Agent Brain Running in {settings.app_env} mode"}
 
 # ----------------------------------------
 # App Startup: DB Init + Healing Loop
 # ----------------------------------------
 @app.on_event("startup")
 async def startup_event():
-    # ✅ Ensure DB tables are created first
     Base.metadata.create_all(bind=engine)
-    # ✅ Then start healing loop
     asyncio.create_task(healing_loop())
