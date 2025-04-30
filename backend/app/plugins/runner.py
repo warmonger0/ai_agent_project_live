@@ -1,50 +1,37 @@
 import sys
 import os
+import json
 import logging
+import traceback
 
-# ✅ Ensure the backend root is in the import path when run as a script
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+# ✅ Ensure `app.*` imports work, even when executed as a subprocess
+BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if BACKEND_ROOT not in sys.path:
+    sys.path.insert(0, BACKEND_ROOT)
 
-from app.plugins.loader import run_plugin
-from app.db.session import SessionLocal
-from app.models import PluginExecution
+from app.services.plugin_runner import run_plugin_job  # Absolute import
 
-logger = logging.getLogger(__name__)
+# ✅ Stream logs to STDERR only, to preserve STDOUT for subprocess JSON
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
-def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
-    db = SessionLocal()
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run a plugin manually.")
+    parser.add_argument("plugin", help="Name of the plugin to run")
+    parser.add_argument("input", nargs="?", default="", help="Input text for the plugin")
+    args = parser.parse_args()
+
     try:
-        # 🔁 Run plugin logic
-        output = run_plugin(plugin_name, input_text)
-
-        # ✅ Normalize success
-        result = {"result": output} if not isinstance(output, dict) else output
-
-        execution = PluginExecution(
-            plugin_name=plugin_name,
-            input_data={"input_text": input_text, "source": source},
-            output_data=result,
-            status="success"
-        )
-        db.add(execution)
-        db.commit()
-
-        logger.info(f"✅ Plugin '{plugin_name}' ran successfully [{source}]")
-        return result
-
+        logging.info(f"🧪 Executing plugin '{args.plugin}' with input: {args.input!r}")
+        result = run_plugin_job(args.plugin, args.input, source="manual")
+        logging.info(f"🎯 Final plugin output: {result}")
+        print(json.dumps(result))  # ✅ STDOUT: must be clean JSON only
     except Exception as e:
-        logger.exception(f"❌ Plugin '{plugin_name}' failed [{source}]")
-
-        error = {"error": str(e)}
-        execution = PluginExecution(
-            plugin_name=plugin_name,
-            input_data={"input_text": input_text, "source": source},
-            output_data=error,
-            status="error"
-        )
-        db.add(execution)
-        db.commit()
-        return error
-
-    finally:
-        db.close()
+        logging.error("❌ Plugin execution failed")
+        traceback.print_exc()
+        try:
+            print(json.dumps({"error": str(e)}))
+        except Exception:
+            print('{"error": "Unhandled plugin error"}')  # ✅ Failsafe output
+        sys.exit(1)

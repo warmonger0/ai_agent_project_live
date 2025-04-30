@@ -1,28 +1,30 @@
 import os
 import sys
+import json
+import signal
+import pprint
 import importlib.util
 import inspect
 import subprocess
-import json
 import resource
-import signal
-from typing import Dict, List, Any, Type  # noqa: F401 # used in plugin typing and interface
+from typing import Dict, List, Any, Type
 
 PLUGIN_DIR = os.path.dirname(__file__)
-PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../../"))
+PROJECT_ROOT = os.path.abspath(os.path.join(PLUGIN_DIR, "../../.."))
 
 def set_limits():
-    # Limit CPU time (seconds)
-    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))  # Max 2 seconds of CPU time
-    # Limit address space (memory usage) to 200 MB
-    mem_limit = 200 * 1024 * 1024  # 200MB
+    # Limit CPU time to 2 seconds
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
+    # Limit memory usage to 200MB
+    mem_limit = 200 * 1024 * 1024
     resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
 
-def discover_plugins() -> List[Dict[str, Any]]:  # noqa: ANN401
+def discover_plugins() -> List[Dict[str, Any]]:
     plugins = []
     for filename in os.listdir(PLUGIN_DIR):
         if not filename.endswith(".py") or filename.startswith("_"):
             continue
+
         path = os.path.join(PLUGIN_DIR, filename)
         name = filename[:-3]
         try:
@@ -32,6 +34,7 @@ def discover_plugins() -> List[Dict[str, Any]]:  # noqa: ANN401
         except Exception as e:
             print(f"⚠️ Skipping plugin '{name}' due to import error: {e}")
             continue
+
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if inspect.isclass(attr) and hasattr(attr, 'run') and callable(attr.run):
@@ -44,7 +47,6 @@ def discover_plugins() -> List[Dict[str, Any]]:  # noqa: ANN401
     return plugins
 
 def load_plugin_class(plugin_name: str) -> Type:
-    import pprint
     filename = f"{plugin_name}.py"
     plugin_path = os.path.join(PLUGIN_DIR, filename)
 
@@ -52,7 +54,6 @@ def load_plugin_class(plugin_name: str) -> Type:
     print(f"🔍 Plugin path: {plugin_path}")
 
     if not os.path.isfile(plugin_path):
-        print("❌ Plugin file not found.")
         raise ImportError(f"Plugin file '{filename}' not found.")
 
     spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
@@ -64,56 +65,53 @@ def load_plugin_class(plugin_name: str) -> Type:
 
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
-        if inspect.isclass(attr):
-            print(f"🔎 Found class: {attr.__name__}")
-            if hasattr(attr, "run") and callable(attr.run):
-                print(f"✅ Matched class: {attr.__name__}")
-                return attr
+        if inspect.isclass(attr) and hasattr(attr, "run") and callable(attr.run):
+            print(f"✅ Found plugin class: {attr.__name__}")
+            return attr
 
-    print("❌ No valid plugin class found.")
-    raise ImportError(f"No valid plugin class found in '{filename}'.")
+    raise ImportError(f"No valid plugin class with 'run()' method found in '{filename}'.")
 
-def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:  # noqa: ANN401
+def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
     if plugin_dir is None:
-        plugin_dir = os.path.dirname(__file__)
+        plugin_dir = PLUGIN_DIR
 
-    runner_path = os.path.abspath(os.path.join(plugin_dir, "runner.py"))
-    plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
-
+    plugin_path = os.path.join(plugin_dir, f"{plugin_name}.py")
     if not os.path.isfile(plugin_path):
         return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
+    # ✅ Isolate execution and ensure `PYTHONPATH` includes backend
     env = os.environ.copy()
-    existing_path = env.get("PYTHONPATH", "")
-    if PROJECT_ROOT not in existing_path:
-        env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + existing_path
+    env["PYTHONPATH"] = PROJECT_ROOT  # clean and direct
 
     try:
         result = subprocess.run(
-            ["python3", runner_path, plugin_name, input_text],
+            ["python3", plugin_path, input_text],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=10,
             cwd=plugin_dir,
             env=env,
             preexec_fn=set_limits,
         )
 
+        print("🔧 [stdout]:", result.stdout.strip())
+        print("⚠️ [stderr]:", result.stderr.strip())
+        print("🔁 [returncode]:", result.returncode)
+
         if result.returncode < 0:
             signal_num = -result.returncode
-            if signal_num == signal.SIGKILL:
-                return {"ok": False, "error": "Plugin terminated: Killed (possible Out of Memory)"}
-            elif signal_num == signal.SIGXCPU:
-                return {"ok": False, "error": "Plugin terminated: CPU time limit exceeded"}
-            else:
-                return {"ok": False, "error": f"Plugin terminated by signal {signal_num}"}
+            msg = (
+                "Killed (Out of Memory)" if signal_num == signal.SIGKILL else
+                "CPU time limit exceeded" if signal_num == signal.SIGXCPU else
+                f"Terminated by signal {signal_num}"
+            )
+            return {"ok": False, "error": f"Plugin terminated: {msg}"}
 
         if result.returncode != 0:
-            stderr = result.stderr.strip() or "Unknown error."
-            return {"ok": False, "error": f"Plugin process failed: {stderr}"}
+            return {"ok": False, "error": f"Plugin process failed: {result.stderr.strip() or 'Unknown error.'}"}
 
         try:
-            output = json.loads(result.stdout)
+            output = json.loads(result.stdout.strip())
         except json.JSONDecodeError as e:
             return {"ok": False, "error": f"Invalid plugin output (not JSON): {e}"}
 
