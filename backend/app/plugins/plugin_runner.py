@@ -1,76 +1,44 @@
-import sys
-import os
-import importlib.util
-import inspect
-import json
-import traceback
+from app.plugins.plugin_loader import run_plugin
+from app.db import SessionLocal
+from app.models import PluginExecution
+import logging
 
-# Add backend root to PYTHONPATH
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+logger = logging.getLogger(__name__)
 
-from app.utils.plugin_logger import store_plugin_execution  # ✅ Log plugin executions properly
-
-def main():
-    if len(sys.argv) != 3:
-        error = {"error": "Usage: plugin_runner.py <plugin_name> <input_json>"}
-        print(json.dumps(error))
-        store_plugin_execution("UNKNOWN", {}, error, "error")
-        sys.exit(1)
-
-    plugin_name = sys.argv[1]
-    input_raw = sys.argv[2]
-
-    # --- Parse input safely ---
+def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
+    db = SessionLocal()
     try:
-        input_data = json.loads(input_raw)
-    except json.JSONDecodeError:
-        input_data = {"input_text": input_raw}  # 🔥 fallback if not JSON
+        # 🔁 Run plugin logic
+        output = run_plugin(plugin_name, input_text)
 
-    plugin_file = os.path.join(os.path.dirname(__file__), f"{plugin_name}.py")
+        # ✅ Normalize success
+        result = {"result": output} if not isinstance(output, dict) else output
 
-    if not os.path.isfile(plugin_file):
-        error = {"error": f"Plugin file '{plugin_name}.py' not found."}
-        print(json.dumps(error))
-        store_plugin_execution(plugin_name, input_data, error, "error")
-        sys.exit(1)
+        execution = PluginExecution(
+            plugin_name=plugin_name,
+            input_data={"input_text": input_text, "source": source},
+            output_data=result,
+            status="success"
+        )
+        db.add(execution)
+        db.commit()
 
-    try:
-        spec = importlib.util.spec_from_file_location(plugin_name, plugin_file)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # --- Look for a valid class with run() method ---
-        for attr_name in dir(module):
-            attr = getattr(module, attr_name)
-            if inspect.isclass(attr) and hasattr(attr, "run") and callable(attr.run):
-                instance = attr()
-                try:
-                    result = instance.run(input_data)
-
-                    # --- ✅ Fix Output ---
-                    output = result if isinstance(result, dict) else {"result": result}
-                    print(json.dumps(output))
-
-                    store_plugin_execution(plugin_name, input_data, output, "success")
-                    return
-                except Exception as e:
-                    traceback.print_exc()
-                    error = {"error": str(e)}
-                    print(json.dumps(error))
-                    store_plugin_execution(plugin_name, input_data, error, "error")
-                    return
-
-        # --- No valid plugin class found ---
-        error = {"error": "No valid Plugin class with run() method found"}
-        print(json.dumps(error))
-        store_plugin_execution(plugin_name, input_data, error, "error")
+        logger.info(f"✅ Plugin '{plugin_name}' ran successfully [{source}]")
+        return result
 
     except Exception as e:
-        traceback.print_exc()
-        error = {"error": str(e)}
-        print(json.dumps(error))
-        store_plugin_execution(plugin_name, input_data, error, "error")
-        sys.exit(1)
+        logger.exception(f"❌ Plugin '{plugin_name}' failed [{source}]")
 
-if __name__ == "__main__":
-    main()
+        error = {"error": str(e)}
+        execution = PluginExecution(
+            plugin_name=plugin_name,
+            input_data={"input_text": input_text, "source": source},
+            output_data=error,
+            status="error"
+        )
+        db.add(execution)
+        db.commit()
+        return error
+
+    finally:
+        db.close()

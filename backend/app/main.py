@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.api.v1 import api_router  # ✅ Versioned router
+from fastapi.exceptions import RequestValidationError
+from fastapi import HTTPException
 
+from app.core import error_handler
+from app.core.config import settings
+from app.api.v1 import api_router
 from app.db import engine, Base
 from app.services.healing_loop import healing_loop
 import asyncio
@@ -13,7 +16,14 @@ import asyncio
 app = FastAPI()
 
 # ----------------------------------------
-# CORS Middleware Setup (now using env var)
+# Register custom error handlers
+# ----------------------------------------
+app.add_exception_handler(HTTPException, error_handler.http_exception_handler)
+app.add_exception_handler(RequestValidationError, error_handler.validation_exception_handler)
+app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
+
+# ----------------------------------------
+# CORS Middleware Setup (from .env)
 # ----------------------------------------
 allowed_origins = (
     [settings.frontend_url]
