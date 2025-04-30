@@ -116,12 +116,12 @@ api_router.include_router(plugin_router)
 /home/war/ai_agent_project/backend/app/controllers/deployment_handler.py
 ### START OF FILE ###
 ```py
-# backend/app/controllers/deployment_handler.py
-
 import os
 import json
 from datetime import datetime
 from app.controllers.ssh_client import SSHClientManager
+from app.db.session import get_db_session  # ✅ For memory tracking
+from app.db.tasks import add_memory_entry  # ✅ Memory ledger log
 from typing import Dict
 
 class DeploymentHandler:
@@ -138,7 +138,8 @@ class DeploymentHandler:
         2. Upload file.
         3. Execute command.
         4. Save deployment result log.
-        5. Return clean result dict.
+        5. Write to memory ledger.
+        6. Return clean result dict.
         """
         ssh_manager = SSHClientManager(
             host=self.host,
@@ -165,7 +166,8 @@ class DeploymentHandler:
 
         finally:
             ssh_manager.close_connection()
-            self.save_deployment_log(result)  # <<== NEW: Always save deployment log
+            self.save_deployment_log(result)
+            self.write_to_memory_ledger(result, remote_path, run_command)
 
         return result
 
@@ -183,6 +185,15 @@ class DeploymentHandler:
             json.dump(result, log_file, indent=4)
 
         print(f"Deployment log saved to: {log_filename}")
+
+    def write_to_memory_ledger(self, result: dict, remote_path: str, command: str):
+        """
+        Add deployment result to memory ledger.
+        """
+        db = get_db_session()
+        context = "deployment"
+        message = f"Deployment {result['status'].upper()} — Command: `{command}` | Remote Path: `{remote_path}` | Output: {result['message']}"
+        add_memory_entry(db, context, f"{self.host}:{remote_path}", message)
 ```
 ### END OF FILE ###
 
@@ -246,12 +257,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import traceback
+import json
 
 from app.db.session import get_db
+from app.db.tasks import add_memory_entry
 from app.plugins.loader import discover_plugins
-from app.plugins.runner import run_plugin_job
+from app.plugins.runner import run_plugin_job  # ✅ Correct import
 from app.models import PluginExecution
-from app.core.api_response import success_response  # ✅
+from app.core.api_response import success_response
 
 router = APIRouter()
 
@@ -270,11 +283,23 @@ def list_plugins():
 
 # --- Run a plugin ---
 @router.post("/plugins/run/{plugin_name}")
-def execute_plugin(plugin_name: str, payload: PluginInput):
+def execute_plugin(plugin_name: str, payload: PluginInput, db: Session = Depends(get_db)):
     try:
         result = run_plugin_job(plugin_name, payload.input_text, source="manual")
+
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
+
+        # Log to memory ledger
+        add_memory_entry(
+            db, "plugin", plugin_name,
+            f"Ran plugin `{plugin_name}` with input: {json.dumps(payload.dict())}"
+        )
+        add_memory_entry(
+            db, "plugin", plugin_name,
+            f"Output: {json.dumps(result)}"
+        )
+
         return success_response(result)
 
     except HTTPException:
@@ -400,11 +425,13 @@ class SSHClientManager:
 ```py
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db.session import get_db  # ✅ now from db/session.py
+from app.db.session import get_db  # ✅ from db/session.py
 from app.db import tasks as task_db  # ✅ from db/tasks.py
+from app.db.tasks import add_memory_entry  # ✅ Chat 11 memory ledger hook
 from app.models import Task, PluginExecution
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
+import json
 
 router = APIRouter()
 
@@ -418,6 +445,7 @@ class TaskCreate(BaseModel):
 @router.post("/tasks", response_model=dict)
 def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     task = task_db.create_task(db, description=task_data.description, model_used=task_data.model_used)
+    add_memory_entry(db, "task", task.id, f"Created task with model `{task.model_used}` and description: {task.description}")
     return {
         "id": task.id,
         "status": task.status,
@@ -462,6 +490,7 @@ def update_task(task_id: int, status: str, error_message: Optional[str] = None, 
     )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    add_memory_entry(db, "task", task.id, f"Updated task status to `{status}`. Error: {error_message}")
     return {
         "id": task.id,
         "status": task.status,
@@ -477,6 +506,7 @@ def retry_task(task_id: int, db: Session = Depends(get_db)):
     if task.status != "error":
         raise HTTPException(status_code=400, detail="Only errored tasks can be retried")
     task = task_db.update_task_status(db, task_id, status="pending", error_message=None, completed=False)
+    add_memory_entry(db, "task", task.id, f"Task retried. Status reset to `pending`.")
     return {"message": f"Task {task_id} status set to pending."}
 
 # --- PLUGIN EXECUTION HISTORY ---
@@ -686,7 +716,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 ### START OF FILE ###
 ```py
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.core.config import settings  # ✅ Reads from .env
 
 # Apply special config only if using SQLite
@@ -708,6 +738,10 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Non-FastAPI helper for direct session use (e.g. scripts, deployment handler)
+def get_db_session() -> Session:
+    return SessionLocal()
 ```
 ### END OF FILE ###
 
@@ -1007,15 +1041,17 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
     if plugin_dir is None:
         plugin_dir = os.path.dirname(__file__)
 
-    runner_path = os.path.abspath(os.path.join(plugin_dir, "plugin_runner.py"))
+    runner_path = os.path.abspath(os.path.join(plugin_dir, "runner.py"))
     plugin_path = os.path.abspath(os.path.join(plugin_dir, f"{plugin_name}.py"))
 
     if not os.path.isfile(plugin_path):
         return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
     env = os.environ.copy()
-    # Inject project root into subprocess environment PYTHONPATH
-    env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    # ✅ Safely inject PROJECT_ROOT into PYTHONPATH
+    existing_path = env.get("PYTHONPATH", "")
+    if PROJECT_ROOT not in existing_path:
+        env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + existing_path
 
     try:
         result = subprocess.run(
@@ -1025,10 +1061,10 @@ def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dic
             timeout=5,
             cwd=plugin_dir,
             env=env,
-            preexec_fn=set_limits,  # 👈 Added CPU/memory limits
+            preexec_fn=set_limits,
         )
 
-        # --- New: detect if plugin was killed by signal ---
+        # --- Detect if plugin was killed by signal ---
         if result.returncode < 0:
             signal_num = -result.returncode
             if signal_num == signal.SIGKILL:
@@ -1102,10 +1138,16 @@ def store_plugin_execution(plugin_name: str, input_data: dict, output_data: dict
 /home/war/ai_agent_project/backend/app/plugins/runner.py
 ### START OF FILE ###
 ```py
+import sys
+import os
+import logging
+
+# ✅ Ensure the backend root is in the import path when run as a script
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 from app.plugins.loader import run_plugin
 from app.db.session import SessionLocal
 from app.models import PluginExecution
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -1729,7 +1771,7 @@ import pytest
 import os
 import tempfile
 import shutil
-from app.plugins import plugin_loader
+from app.plugins import loader as plugin_loader
 
 PLUGIN_NAME = "echo_plugin"
 PLUGIN_INPUT = '{"text": "Unit test input"}'
@@ -1747,12 +1789,16 @@ def create_plugin_file(dir_path, name, content):
         f.write(content)
 
 def create_plugin_runner(dir_path):
-    with open(os.path.join(dir_path, "plugin_runner.py"), "w") as f:
+    with open(os.path.join(dir_path, "runner.py"), "w") as f:
         f.write("""
 import sys
+import os
 import importlib.util
 import json
 import traceback
+
+# Patch sys.path for resolving imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 if __name__ == "__main__":
     try:
@@ -1773,7 +1819,6 @@ if __name__ == "__main__":
 
         plugin_instance = plugin_class()
 
-        # Parse input_text from JSON first
         try:
             parsed_input = json.loads(input_text)
         except Exception:
@@ -1808,7 +1853,6 @@ class TestSuccess:
     assert result["result"] == "HELLO"
 
 def test_run_plugin_not_found(temp_plugin_dir):
-    # No need to create plugin_runner since plugin is missing
     result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
     assert "not found" in result["error"]
@@ -2047,6 +2091,174 @@ import autoprefixer from "autoprefixer";
 export default {
   plugins: [tailwindcss, autoprefixer],
 };
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/scripts/refactor-status-constants.ts
+### START OF FILE ###
+```ts
+import { Project, SyntaxKind } from "ts-morph";
+import * as fs from "fs";
+import * as path from "path";
+
+const ROOT_DIR = path.resolve(__dirname, "../src");
+const BACKUP_DIR = path.join(ROOT_DIR, "__backups__");
+
+fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+const STATUS_LITERALS = ["pending", "running", "success", "error"];
+const IMPORT_STATEMENT = `import { TaskStatus, TaskStatusList } from "@/lib/constants";`;
+
+const StatusIndexMap = {
+  pending: 0,
+  running: 1,
+  success: 2,
+  error: 3,
+} as const;
+
+const project = new Project({
+  tsConfigFilePath: path.resolve(__dirname, "../../tsconfig.scripts.json"),
+});
+
+const files = project.getSourceFiles("**/*.{ts,tsx}");
+
+for (const file of files) {
+  const text = file.getFullText();
+  let updated = false;
+
+  const relPath = path.relative(ROOT_DIR, file.getFilePath());
+  const backupPath = path.join(BACKUP_DIR, relPath);
+  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  fs.writeFileSync(backupPath, text);
+
+  // Insert import if not already present
+  if (!text.includes("TaskStatusList")) {
+    file.insertText(0, IMPORT_STATEMENT + "\n");
+    updated = true;
+  }
+
+  // Update union type aliases: "pending" | "success" | ...
+  file.getTypeAliases().forEach((alias) => {
+    const union = alias.getTypeNode()?.asKind(SyntaxKind.UnionType);
+    if (!union) return;
+
+    const literals = union.getTypeNodes().map((n) => n.getText().replace(/['"]/g, ""));
+    if (literals.every((val) => STATUS_LITERALS.includes(val))) {
+      alias.setType("TaskStatus");
+      updated = true;
+    }
+  });
+
+  // Replace comparisons: status === "success"
+  file.getDescendantsOfKind(SyntaxKind.BinaryExpression).forEach((expr) => {
+    const left = expr.getLeft();
+    const right = expr.getRight();
+
+    if (
+      expr.getOperatorToken().getText() === "===" &&
+      right.getKind() === SyntaxKind.StringLiteral
+    ) {
+      const lit = right.getText().replace(/['"]/g, "");
+      if ((lit as keyof typeof StatusIndexMap) in StatusIndexMap) {
+        const index = StatusIndexMap[lit as keyof typeof StatusIndexMap];
+        right.replaceWithText(`TaskStatusList[${index}]`);
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    file.saveSync();
+    console.log("✅ Updated:", relPath);
+  }
+}
+
+console.log("🎉 Refactor pass #2 complete! All updates backed up to /src/__backups__/");
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/scripts/src/refactor-status-constants.ts
+### START OF FILE ###
+```ts
+import { Project, SyntaxKind } from "ts-morph";
+import * as fs from "fs";
+import * as path from "path";
+
+const ROOT_DIR = path.resolve(__dirname, "../src");
+const BACKUP_DIR = path.join(ROOT_DIR, "__backups__");
+
+fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+const STATUS_LITERALS = ["pending", "running", "success", "error"];
+const IMPORT_STATEMENT = `import { TaskStatus, TaskStatusList } from "@/lib/constants";`;
+
+const StatusIndexMap = {
+  pending: 0,
+  running: 1,
+  success: 2,
+  error: 3,
+} as const;
+
+const project = new Project({
+  tsConfigFilePath: path.resolve(__dirname, "../../tsconfig.scripts.json"),
+});
+
+const files = project.getSourceFiles("**/*.{ts,tsx}");
+
+for (const file of files) {
+  const text = file.getFullText();
+  let updated = false;
+
+  const relPath = path.relative(ROOT_DIR, file.getFilePath());
+  const backupPath = path.join(BACKUP_DIR, relPath);
+  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  fs.writeFileSync(backupPath, text);
+
+  // Insert import if not already present
+  if (!text.includes("TaskStatusList")) {
+    file.insertText(0, IMPORT_STATEMENT + "\n");
+    updated = true;
+  }
+
+  // Update union type aliases: "pending" | "success" | ...
+  file.getTypeAliases().forEach((alias) => {
+    const union = alias.getTypeNode()?.asKind(SyntaxKind.UnionType);
+    if (!union) return;
+
+    const literals = union.getTypeNodes().map((n) => n.getText().replace(/['"]/g, ""));
+    if (literals.every((val) => STATUS_LITERALS.includes(val))) {
+      alias.setType("TaskStatus");
+      updated = true;
+    }
+  });
+
+  // Replace comparisons: status === "success"
+  file.getDescendantsOfKind(SyntaxKind.BinaryExpression).forEach((expr) => {
+    const left = expr.getLeft();
+    const right = expr.getRight();
+
+    if (
+      expr.getOperatorToken().getText() === "===" &&
+      right.getKind() === SyntaxKind.StringLiteral
+    ) {
+      const lit = right.getText().replace(/['"]/g, "");
+      if ((lit as keyof typeof StatusIndexMap) in StatusIndexMap) {
+        const index = StatusIndexMap[lit as keyof typeof StatusIndexMap];
+        right.replaceWithText(`TaskStatusList[${index}]`);
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    file.saveSync();
+    console.log("✅ Updated:", relPath);
+  }
+}
+
+console.log("🎉 Refactor pass #2 complete! All updates backed up to /src/__backups__/");
 ```
 ### END OF FILE ###
 
@@ -3403,6 +3615,26 @@ export {
     @apply bg-background text-foreground;
   }
 }
+```
+### END OF FILE ###
+
+###PATH###
+/home/war/ai_agent_project/frontend/src/lib/constants.ts
+### START OF FILE ###
+```ts
+// Centralized shared literals for status, types, and enums
+
+// Task status values used throughout frontend/backend
+export const TaskStatusList = ["pending", "running", "success", "error"] as const;
+export type TaskStatus = typeof TaskStatusList[number];
+
+// Plugin field input types
+export const InputFieldTypes = ["text", "number", "boolean"] as const;
+export type InputFieldType = typeof InputFieldTypes[number];
+
+// Models supported (future expansion)
+export const ModelUsedList = ["deepseek", "claude", "gpt4"] as const;
+export type ModelUsed = typeof ModelUsedList[number];
 ```
 ### END OF FILE ###
 
