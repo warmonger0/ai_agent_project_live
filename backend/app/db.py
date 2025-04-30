@@ -1,18 +1,20 @@
-import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
+from app.core.config import settings  # ✅ Reads from .env
 
-# --- Create database connection ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
+# Apply special config only if using SQLite
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Create engine dynamically from .env
+engine = create_engine(settings.database_url, connect_args=connect_args)
+
+# Create shared session factory and base model
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
-# --- Shared DB session dependency for FastAPI ---
+# FastAPI dependency for DB session
 def get_db():
     db = SessionLocal()
     try:

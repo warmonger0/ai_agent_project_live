@@ -1,20 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import traceback  # ✅ Add traceback for better error debug
-from app.db import SessionLocal
+import traceback
+
+from app.db import get_db
 from app.plugins.plugin_loader import discover_plugins, run_plugin
 from app.models import PluginExecution
 
 router = APIRouter()
 
-# --- Dependency for DB session ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # --- Pydantic input model ---
 class PluginInput(BaseModel):
@@ -54,7 +48,12 @@ def execute_plugin(plugin_name: str, payload: PluginInput, db: Session = Depends
 # --- Get plugin execution history ---
 @router.get("/plugin/history")
 def get_plugin_execution_history(limit: int = 10, db: Session = Depends(get_db)):
-    executions = db.query(PluginExecution).order_by(PluginExecution.timestamp.desc()).limit(limit).all()
+    try:
+        executions = db.query(PluginExecution).order_by(PluginExecution.timestamp.desc()).limit(limit).all()
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"DB query failed: {str(e)}")
+
     return [
         {
             "id": execution.id,
