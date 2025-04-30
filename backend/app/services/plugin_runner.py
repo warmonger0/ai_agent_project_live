@@ -11,6 +11,8 @@ def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
     db = SessionLocal()
     try:
         output = run_plugin(plugin_name, input_text)
+
+        # ✅ Always ensure output is JSON-serializable
         result = {"result": output} if not isinstance(output, dict) else output
 
         execution = PluginExecution(

@@ -1,24 +1,25 @@
+/// <reference types="vitest" />
+import { vi } from "vitest";
+
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import PluginForm, { PluginInputSpec } from "../components/PluginForm"; // ✅ Import both
+import PluginExecutionForm from "../components/plugin/PluginExecutionForm";
 
-describe("PluginForm", () => {
-  const mockSpec: PluginInputSpec[] = [
-    { name: "input1", label: "Text Field", type: "text", required: true },
-    { name: "count", label: "Count", type: "number" },
-    { name: "toggle", label: "Enable", type: "boolean" },
-  ];
+const mockSpec = [
+  { name: "input1", label: "Text Field", type: "text", required: true },
+  { name: "count", label: "Count", type: "number" },
+  { name: "toggle", label: "Enable", type: "boolean" },
+];
 
-  const mockSubmit = jest.fn();
+describe("PluginExecutionForm", () => {
+  const mockChange = vi.fn();
 
   beforeEach(() => {
     render(
-      <PluginForm
-        pluginName="TestPlugin"
+      <PluginExecutionForm
         inputSpec={mockSpec}
-        onSubmit={mockSubmit}
-        status="idle"
-      />,
+        onChange={mockChange} // ✅ only required props
+      />
     );
   });
 
@@ -28,20 +29,18 @@ describe("PluginForm", () => {
     expect(screen.getByLabelText("Enable")).toBeInTheDocument();
   });
 
-  it("submits form with input values", () => {
+  it("calls onChange for input fields", () => {
     fireEvent.change(screen.getByLabelText("Text Field"), {
       target: { value: "test input" },
     });
+    expect(mockChange).toHaveBeenCalledWith("input1", "test input");
+
     fireEvent.change(screen.getByLabelText("Count"), {
       target: { value: "42" },
     });
-    fireEvent.click(screen.getByLabelText("Enable"));
-    fireEvent.click(screen.getByText("Run Plugin"));
+    expect(mockChange).toHaveBeenCalledWith("count", "42");
 
-    expect(mockSubmit).toHaveBeenCalledWith({
-      input1: "test input",
-      count: 42,
-      toggle: true,
-    });
+    fireEvent.click(screen.getByLabelText("Enable"));
+    expect(mockChange).toHaveBeenCalledWith("toggle", true);
   });
 });

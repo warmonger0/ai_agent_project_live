@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Dict, Any
+
 import traceback
 import json
 
@@ -12,10 +14,6 @@ from app.models import PluginExecution
 from app.core.api_response import success_response
 
 router = APIRouter()
-
-# --- Pydantic input model ---
-class PluginInput(BaseModel):
-    input_text: str
 
 # --- List all available plugins ---
 @router.get("/plugins")
@@ -31,7 +29,6 @@ def list_plugins():
 def get_plugin_spec(plugin_name: str):
     try:
         plugin_class = load_plugin_class(plugin_name)
-
         if not hasattr(plugin_class, "input_spec"):
             raise HTTPException(status_code=404, detail="input_spec not defined for plugin.")
 
@@ -46,30 +43,41 @@ def get_plugin_spec(plugin_name: str):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to load plugin spec: {str(e)}")
 
-# --- Run a plugin ---
+# --- Run a plugin (dynamically handle input) ---
 @router.post("/plugins/run/{plugin_name}")
-def execute_plugin(plugin_name: str, payload: PluginInput, db: Session = Depends(get_db)):
+async def execute_plugin(
+    plugin_name: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
     try:
-        result = run_plugin_job(plugin_name, payload.input_text, source="manual")
+        payload: Dict[str, Any] = await request.json()
+        print(f"🛠 Received payload: {payload}")
 
-        if "error" in result:
+        input_text = payload.get("input_text", "")
+        result = run_plugin_job(plugin_name, input_text, source="manual")
+        print(f"🎯 Raw plugin result: {result}")
+
+        if isinstance(result, dict) and "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
 
         # Log to memory ledger
         add_memory_entry(
             db, "plugin", plugin_name,
-            f"Ran plugin `{plugin_name}` with input: {json.dumps(payload.dict())}"
+            f"Ran plugin `{plugin_name}` with input: {json.dumps(payload)}"
         )
         add_memory_entry(
             db, "plugin", plugin_name,
             f"Output: {json.dumps(result)}"
         )
 
+        if isinstance(result, (str, int, float)):
+            result = {"result": result}
+
         return success_response(result)
 
     except HTTPException:
         raise
-
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Plugin execution failed: {str(e)}")

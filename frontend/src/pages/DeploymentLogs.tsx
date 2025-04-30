@@ -12,12 +12,16 @@ const DeploymentLogs: React.FC = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await axios.get<string[]>("/api/v1/logs");
-      setLogs(response.data);
+      const response = await axios.get("/api/v1/logs");
+
+      // ✅ Extract .data.data and verify it's an array
+      const safeLogs = Array.isArray(response.data?.data) ? response.data.data : [];
+      setLogs(safeLogs);
       setError(null);
     } catch (err) {
-      console.error("Failed to load logs:", err);
+      console.error("❌ Failed to load logs:", err);
       setError("Failed to load logs.");
+      setLogs([]);
     } finally {
       setLoadingLogs(false);
     }

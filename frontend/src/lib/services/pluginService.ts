@@ -1,33 +1,22 @@
 import axios from "axios";
-
-// -- Shared Types --
-export interface PluginInputField {
-  name: string;
-  type: string;
-  required?: boolean;
-  description?: string;
-}
-
-export interface PluginSpec {
-  name: string;
-  description?: string;
-  module?: string;
-  class?: string;
-}
-
-export interface PluginExecution {
-  id: number;
-  plugin_name: string;
-  input_data: Record<string, unknown>;
-  output_data: unknown;
-  status: string;
-  timestamp: string;
-}
+import type {
+  PluginSpec,
+  PluginInputField,
+  PluginExecution,
+} from "@/lib/types/plugin";
 
 // 🔍 List all available plugins
 export const fetchPlugins = async (): Promise<PluginSpec[]> => {
   const response = await axios.get("/api/v1/plugins");
   const data = response.data;
+
+  if (
+    import.meta.env.MODE === "development" &&
+    !Array.isArray(data?.data?.plugins)
+  ) {
+    console.warn("Unexpected plugin list shape:", data);
+  }
+
   return Array.isArray(data?.data?.plugins) ? data.data.plugins : [];
 };
 
@@ -37,6 +26,14 @@ export const fetchPluginSpec = async (
 ): Promise<PluginInputField[]> => {
   const response = await axios.get(`/api/v1/plugins/${pluginName}/spec`);
   const data = response.data;
+
+  if (
+    import.meta.env.MODE === "development" &&
+    !Array.isArray(data?.data?.input_spec)
+  ) {
+    console.warn("Unexpected plugin spec shape:", data);
+  }
+
   return Array.isArray(data?.data?.input_spec) ? data.data.input_spec : [];
 };
 
@@ -44,6 +41,14 @@ export const fetchPluginSpec = async (
 export const fetchPluginHistory = async (): Promise<PluginExecution[]> => {
   const response = await axios.get("/api/v1/plugin/history");
   const data = response.data;
+
+  if (
+    import.meta.env.MODE === "development" &&
+    !Array.isArray(data?.data)
+  ) {
+    console.warn("Unexpected history shape:", data);
+  }
+
   return Array.isArray(data?.data) ? data.data : [];
 };
 
@@ -60,6 +65,14 @@ export const runPlugin = async (
 
   const response = await axios.post(`/api/v1/plugins/run/${pluginName}`, payload);
   const data = response.data;
+
+  if (
+    import.meta.env.MODE === "development" &&
+    !data?.data?.result && !data?.data
+  ) {
+    console.warn("Unexpected runPlugin result:", data);
+  }
+
   return data?.data?.result ?? data?.data ?? "No result";
 };
 
@@ -70,3 +83,6 @@ export const formatPluginResult = (result: unknown): string => {
   }
   return String(result);
 };
+
+// ✅ Optional re-exports
+export type { PluginSpec, PluginInputField, PluginExecution };

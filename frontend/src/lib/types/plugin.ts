@@ -11,6 +11,14 @@ export interface PluginExecution {
 
 export interface PluginSpec {
   name: string;
-  description: string;
-  module: string;
+  description?: string;
+  module?: string;
+  class?: string;
+}
+
+export interface PluginInputField {
+  name: string;
+  type: string;
+  required?: boolean;
+  description?: string;
 }

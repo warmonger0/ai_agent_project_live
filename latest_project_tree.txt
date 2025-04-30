@@ -17,9 +17,7 @@
 │   │   │   ├── logs_controller.py
 │   │   │   ├── plugin_controller.py
 │   │   │   ├── ssh_client.py
-│   │   │   ├── task_controller.py
-│   │   │   ├── test_deployment_handler.py
-│   │   │   └── test_ssh_deploy.py
+│   │   │   └── task_controller.py
 │   │   ├── core
 │   │   │   ├── api_response.py
 │   │   │   ├── config.py
@@ -30,52 +28,83 @@
 │   │   │   ├── session.py
 │   │   │   └── tasks.py
 │   │   ├── __init__.py
+│   │   ├── logs
+│   │   │   └── deployment_2025-04-30.log
 │   │   ├── main.py
 │   │   ├── models.py
 │   │   ├── plugins
-│   │   │   ├── echo_plugin.py
+│   │   │   ├── echo.py
 │   │   │   ├── loader.py
 │   │   │   ├── logger.py
 │   │   │   └── runner.py
 │   │   ├── schemas.py
 │   │   ├── services
-│   │   │   └── healing_loop.py
+│   │   │   ├── healing_loop.py
+│   │   │   └── plugin_runner.py
 │   │   └── utils
+│   │       ├── json_utils.py
 │   │       ├── model_router.py
 │   │       ├── monitor.py
 │   │       └── ollama_healthcheck.py
 │   ├── backend_tree.txt
 │   ├── database.db
+│   ├── group_variables.txt
 │   ├── healing.log
+│   ├── __init__.py
 │   ├── migrations
-│   │   ├── env.py
 │   │   ├── README
 │   │   ├── script.py.mako
 │   │   └── versions
 │   │       ├── 2d69244356e1_add_error_message_timestamp_completed_.py
 │   │       └── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
 │   ├── plugins
-│   │   └── echo_plugin.py
+│   │   └── echo.py
 │   ├── .pytest_cache
 │   │   ├── CACHEDIR.TAG
 │   │   ├── .gitignore
 │   │   ├── README.md
 │   │   └── v
 │   │       └── cache
+│   ├── requirements.txt
 │   ├── scripts
-│   │   ├── init_db.py
-│   │   ├── insert_failed_task.py
 │   │   └── inspect_db.py
 │   └── tests
 │       ├── conftest.py
+│       ├── coverage_summary.json
 │       ├── integration
+│       │   ├── test_deployment_handler.py
+│       │   ├── test_plugin_spec_route.py
+│       │   ├── test_ssh_deploy.py
 │       │   └── test_task_routes.py
+│       ├── qa
+│       │   └── test_qa_enforcer.py
 │       └── unit
+│           ├── test_api_response.py
+│           ├── test_config.py
+│           ├── test_echo.py
+│           ├── test_error_handler.py
+│           ├── test_healing_controller.py
+│           ├── test_healing_loop.py
+│           ├── test_health_controller.py
+│           ├── test_json_utils.py
+│           ├── test_loader.py
+│           ├── test_logger.py
+│           ├── test_logs_controller.py
+│           ├── test_main.py
+│           ├── test_model_router.py
 │           ├── test_models.py
+│           ├── test_monitor.py
+│           ├── test_ollama_healthcheck.py
+│           ├── test_plugin_controller.py
 │           ├── test_plugin_history.py
 │           ├── test_plugin_loader.py
+│           ├── test_runner.py
+│           ├── test_schemas.py
+│           ├── test_session.py
 │           ├── test_ssh_client.py
-│           └── test_task_db.py
+│           ├── test_task_controller.py
+│           ├── test_task_db.py
+│           └── test_tasks.py
 ├── changelog.md
 ├── deployments
 │   ├── last_build
@@ -112,17 +141,21 @@
 │   ├── jest.config.mjs
 │   ├── package.json
 │   ├── package-lock.json
-│   ├── postcss.config.js
+│   ├── postcss.config.cjs
 │   ├── public
 │   │   └── vite.svg
 │   ├── README.md
+│   ├── scripts
+│   │   ├── out
+│   │   └── src
+│   │       ├── __backups__
+│   │       └── refactor-status-constants.ts
 │   ├── src
-│   │   ├── App.css
 │   │   ├── App.tsx
 │   │   ├── assets
-│   │   │   └── react.svg
 │   │   ├── components
-│   │   │   ├── PluginForm.tsx
+│   │   │   ├── plugin
+│   │   │   ├── PluginExecutionForm.tsx
 │   │   │   ├── PluginHistory.tsx
 │   │   │   ├── PluginPanel.tsx
 │   │   │   ├── table
@@ -130,7 +163,9 @@
 │   │   │   └── ui
 │   │   ├── index.css
 │   │   ├── lib
+│   │   │   ├── constants.ts
 │   │   │   ├── services
+│   │   │   ├── services_backup_js_20250430_075405
 │   │   │   ├── types
 │   │   │   └── utils.ts
 │   │   ├── main.tsx
@@ -142,13 +177,21 @@
 │   │   │   ├── DeploymentLogs.test.tsx
 │   │   │   ├── LogViewer.integration.test.ts
 │   │   │   ├── PluginForm.test.tsx
-│   │   │   └── SystemHealth.test.tsx
+│   │   │   ├── PluginPanel.test.tsx
+│   │   │   ├── SystemHealth.test.tsx
+│   │   │   ├── TaskDashboard.test.tsx
+│   │   │   ├── TaskRow.test.tsx
+│   │   │   └── TaskTable.test.tsx
 │   │   └── vite-env.d.ts
 │   ├── tailwind.config.ts
 │   ├── tsconfig.app.json
 │   ├── tsconfig.json
 │   ├── tsconfig.node.json
-│   └── vite.config.ts
+│   ├── tsconfig.scripts.json
+│   ├── tsconfig.tsbuildinfo
+│   ├── vite.config.ts
+│   ├── vitest.config.ts
+│   └── vitest.setup.ts
 ├── .gitignore
 ├── healing.log
 ├── latest_project_tree.txt
@@ -157,8 +200,13 @@
 │   │   └── model_registry.json
 │   └── scripts
 │       └── start_models.sh
+├── package.json
+├── package-lock.json
 ├── pipwrapper.sh
-├── project_tree.txt
+├── primary_code_files.bak.txt
+├── primary_code_files.diff.txt
+├── primary_code_files.ignore
+├── primary_code_files.txt
 ├── .pytest_cache
 │   ├── CACHEDIR.TAG
 │   ├── .gitignore
@@ -173,7 +221,11 @@
 ├── requirements-dev.txt
 ├── requirements.txt
 ├── scripts
-│   └── dev_activate.sh
+│   ├── dev
+│   │   ├── init_db.py
+│   │   └── insert_failed_task.py
+│   ├── dev_activate.sh
+│   └── track_primary_code_files.sh
 ├── start_dev.sh
 ├── start_prod.sh
 ├── system_info
@@ -209,4 +261,4 @@
     ├── lib64 -> lib
     └── pyvenv.cfg
 
-62 directories, 148 files
+71 directories, 191 files
