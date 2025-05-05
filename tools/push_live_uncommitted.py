@@ -29,8 +29,16 @@ with tempfile.TemporaryDirectory() as temp_dir:
         print("🗂 Restoring backed-up files into clean branch")
         run(["rsync", "-a", "--no-group", "--exclude", ".git", f"{temp_dir}/", "."])
 
-        print("📦 Adding and committing all files")
+        print("📦 Staging files")
         run(["git", "add", "."])
+
+        # Check if there's anything new to commit
+        diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"])
+        if diff_check.returncode == 0:
+            print("⏭️ No changes to push. Skipping.")
+            exit(0)
+
+        print("📌 Committing snapshot")
         run(["git", "commit", "-m", "LIVE CODE SNAPSHOT (unsynced, unstable)"])
 
         print("🚀 Pushing to github-live:main with token-based remote")
