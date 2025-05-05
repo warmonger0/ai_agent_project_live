@@ -46,3 +46,4 @@ Thumbs.db
 # Utility & Generated Files
 latest_project_tree.txt
 primary_code_files*
+tools/status-check.sh
