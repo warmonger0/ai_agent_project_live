@@ -13,19 +13,18 @@ DISABLE_FLAG = Path("/tmp/sync_disabled.flag")
 SYNC_LOG = Path("/tmp/last_sync.log")
 PUSH_SCRIPT = SRC / "tools" / "push_live_uncommitted.py"
 
-# Load and compile syncignore rules
-if SYNCIGNORE.exists():
-    with open(SYNCIGNORE, "r") as f:
-        ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", f)
-else:
-    ignore_spec = pathspec.PathSpec([])
+# Compile syncignore rules
+ignore_spec = pathspec.PathSpec.from_lines(
+    "gitwildmatch",
+    SYNCIGNORE.read_text().splitlines() if SYNCIGNORE.exists() else []
+)
 
 def is_ignored(path: Path) -> bool:
     try:
-        relative = str(path.relative_to(SRC))
-        return ignore_spec.match_file(relative)
+        rel_path = str(path.relative_to(SRC))
     except ValueError:
-        return True
+        return True  # Outside project
+    return ignore_spec.match_file(rel_path)
 
 def log(msg):
     print(msg)
@@ -37,20 +36,30 @@ def trigger_push():
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             text=True)
-    log(result.stdout.strip())
-    if result.stderr:
+    if result.stdout.strip():
+        log(result.stdout.strip())
+    if result.stderr.strip():
         log("❌ Error during push:")
         log(result.stderr.strip())
 
 class PushHandler(FileSystemEventHandler):
+    last_trigger = 0
+    debounce_interval = 1  # seconds
+
     def on_any_event(self, event):
-        changed_path = Path(event.src_path)
+        now = time.time()
+        path = Path(event.src_path)
+
         if DISABLE_FLAG.exists():
             log("⚠️ Sync disabled. Skipping push.")
             return
-        if is_ignored(changed_path):
+        if is_ignored(path):
             return
-        log(f"📦 Detected change: {changed_path}")
+        if now - self.last_trigger < self.debounce_interval:
+            return
+
+        self.last_trigger = now
+        log(f"📦 Detected change: {path}")
         trigger_push()
 
 def main():
