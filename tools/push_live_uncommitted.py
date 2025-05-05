@@ -52,3 +52,4 @@ with tempfile.TemporaryDirectory() as temp_dir:
     run(["git", "push", "-f", "github-live", "temp-live:main"])
     print("✅ Snapshot updated and pushed.")
     print("✅ Live snapshot pushed to GitHub.")
+    print("🔁 Push complete. Listening for new changes...")
