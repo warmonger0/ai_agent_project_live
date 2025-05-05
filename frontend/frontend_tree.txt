@@ -1,0 +1,52 @@
+.
+├── components.json
+├── eslint.config.js
+├── frontend_tree.txt
+├── index.html
+├── jest.config.mjs
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+├── public
+│   └── vite.svg
+├── README.md
+├── src
+│   ├── App.css
+│   ├── App.tsx
+│   ├── assets
+│   │   └── react.svg
+│   ├── components
+│   │   ├── PluginForm.tsx
+│   │   ├── PluginHistory.tsx
+│   │   ├── PluginPanel.tsx
+│   │   ├── TaskTable.tsx
+│   │   └── ui
+│   ├── index.css
+│   ├── lib
+│   │   └── utils.ts
+│   ├── main.tsx
+│   ├── pages
+│   │   ├── DeploymentLogs.tsx
+│   │   ├── SystemHealth.tsx
+│   │   └── TaskDashboard.tsx
+│   ├── services
+│   │   ├── api.js
+│   │   ├── healthService.js
+│   │   ├── logService.js
+│   │   ├── pluginService.ts
+│   │   └── taskService.js
+│   ├── __tests__
+│   │   ├── DeploymentLogs.test.tsx
+│   │   ├── LogViewer.integration.test.ts
+│   │   ├── PluginForm.test.tsx
+│   │   └── SystemHealth.test.tsx
+│   ├── types
+│   │   └── plugin.ts
+│   └── vite-env.d.ts
+├── tailwind.config.ts
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+
+11 directories, 39 files

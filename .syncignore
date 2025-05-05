@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+*.log
+*.bak
+*.swp
+*.swo
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment & misc
+.env
+database.db
+.healing.log
+
+# Node.js
+node_modules/
+**/node_modules/
+dist/
+.postcssrc
+tailwind.config.js
+
+# Testing
+.pytest_cache/
+tests/**/__pycache__/
+
+# Editor & system junk
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Deployment & logs
+/deployments/logs/
+
+# Dev-only runtime files (e.g. Vite sockets)
+**/.5173*
+
+# Internal Gateway - not synced or versioned
+/internal_gateway/
+
+# Utility & Generated Files
+latest_project_tree.txt
+primary_code_files*
