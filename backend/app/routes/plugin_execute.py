@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.db.tasks import add_memory_entry
-from app.plugins.loader import load_plugin_class
-from app.core.api_response import success_response
-from app.models import Task
+from backend.app.db.session import get_db
+from backend.app.db.tasks import add_memory_entry
+from backend.app.plugins.loader import load_plugin_class
+from backend.app.core.api_response import success_response
+from backend.app.models import Task
 from datetime import datetime
 from typing import Dict, Any
 import json

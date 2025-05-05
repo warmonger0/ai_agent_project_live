@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-from app.controllers.ssh_client import SSHClientManager
+from backend.app.controllers.ssh_client import SSHClientManager
 
 # Dummy connection details
 HOST = "dummy_host"

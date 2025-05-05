@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from app.core.config import settings  # ✅ Reads from .env
+from backend.app.core.config import settings  # ✅ Reads from .env
 
 # Apply special config only if using SQLite
 connect_args = {}

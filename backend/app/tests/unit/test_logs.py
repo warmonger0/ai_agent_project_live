@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from fastapi import status
 from unittest import mock
 
-from app.routes.logs import router, LOG_DIR
+from backend.app.routes.logs import router, LOG_DIR
 from fastapi import FastAPI
 
 app = FastAPI()

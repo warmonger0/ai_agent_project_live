@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from app.controllers.logs_controller import router
+from backend.app.controllers.logs_controller import router
 from pathlib import Path
 import os
 

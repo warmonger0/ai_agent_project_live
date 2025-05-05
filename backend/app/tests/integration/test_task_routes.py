@@ -3,9 +3,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import Base
-from app.main import app
-from app.db.session import get_db
+from backend.app.models import Base
+from backend.app.main import app
+from backend.app.db.session import get_db
 
 # --- Setup disk-based SQLite test DB ---
 DATABASE_URL = "sqlite:///./test_database.db"  # ✅ Persistent during tests

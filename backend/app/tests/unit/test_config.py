@@ -1,6 +1,6 @@
 import os
 from unittest.mock import patch
-from app.core.config import Settings
+from backend.app.core.config import Settings
 
 @patch.dict(os.environ, {
     "APP_ENV": "test",

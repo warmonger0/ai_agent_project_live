@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 # Ensure the root project directory is in path for clean imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
-from app.db.session import SessionLocal
-from app.models import Task
-from app.utils.devtools import insert_dummy_task  # ✅ now from safe location
+from backend.app.db.session import SessionLocal
+from backend.app.models import Task
+from backend.app.utils.devtools import insert_dummy_task  # ✅ now from safe location
 
 @pytest.fixture(scope="function")
 def db_session():

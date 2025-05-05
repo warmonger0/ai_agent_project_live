@@ -1,7 +1,7 @@
 # backend/app/services/execution_tracker.py
 
-from app.db.session import SessionLocal
-from app.models import PluginExecution
+from backend.app.db.session import SessionLocal
+from backend.app.models import PluginExecution
 import logging
 
 logger = logging.getLogger(__name__)

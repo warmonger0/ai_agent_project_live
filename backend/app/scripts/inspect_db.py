@@ -1,4 +1,4 @@
-from app.db import engine
+from backend.app.db import engine
 from sqlalchemy import inspect
 
 if __name__ == "__main__":

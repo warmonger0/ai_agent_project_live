@@ -1,6 +1,6 @@
 # backend/app/controllers/test_ssh_deploy.py
 
-from app.controllers.ssh_client import SSHClientManager
+from backend.app.controllers.ssh_client import SSHClientManager
 import os
 
 # SSH connection info for localhost

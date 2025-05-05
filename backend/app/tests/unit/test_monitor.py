@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from app.utils.monitor import check_backend_health
+from backend.app.utils.monitor import check_backend_health
 
 @patch("app.utils.monitor.requests.get")
 def test_check_backend_health_success(mock_get):

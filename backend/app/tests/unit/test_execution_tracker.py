@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-from app.services.execution_tracker import store_execution_result
+from backend.app.services.execution_tracker import store_execution_result
 
 
 @pytest.fixture

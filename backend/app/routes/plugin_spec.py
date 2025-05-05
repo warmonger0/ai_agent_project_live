@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from app.plugins.loader import load_plugin_class
-from app.core.api_response import success_response
+from backend.app.plugins.loader import load_plugin_class
+from backend.app.core.api_response import success_response
 import traceback
 
 router = APIRouter()

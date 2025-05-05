@@ -2,8 +2,8 @@ import asyncio
 import logging
 import httpx
 from sqlalchemy.orm import Session
-from app.db.session import SessionLocal
-from app.models import Task
+from backend.app.db.session import SessionLocal
+from backend.app.models import Task
 
 # --- Logging Setup: logs to console + file ---
 logging.basicConfig(

@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Base
-from app.db.tasks import (
+from backend.app.models import Base
+from backend.app.db.tasks import (
     create_task,
     get_task,
     update_task_status,

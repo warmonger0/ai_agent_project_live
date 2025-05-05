@@ -1,4 +1,4 @@
-from app.plugins.echo import Echo
+from backend.app.plugins.echo import Echo
 
 def test_echo_metadata():
     echo = Echo()

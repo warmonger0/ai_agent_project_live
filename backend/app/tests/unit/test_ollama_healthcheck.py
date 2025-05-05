@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from app.utils.ollama_healthcheck import check_ollama_health
+from backend.app.utils.ollama_healthcheck import check_ollama_health
 import requests
 
 @patch("app.utils.ollama_healthcheck.requests.get")

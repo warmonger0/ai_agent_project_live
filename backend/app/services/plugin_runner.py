@@ -1,7 +1,7 @@
 # backend/app/services/plugin_runner.py
 
-from app.plugins.loader import run_plugin
-from app.services.execution_tracker import store_execution_result
+from backend.app.plugins.loader import run_plugin
+from backend.app.services.execution_tracker import store_execution_result
 
 def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
     try:

@@ -2,14 +2,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
-from app.core import error_handler
-from app.core.config import settings
-from app.db.session import engine, Base
-from app.db.session import SessionLocal
-from app.models import Task
-from app.services.healing_loop import healing_loop
+from backend.app.core import error_handler
+from backend.app.core.config import settings
+from backend.app.db.session import engine, Base
+from backend.app.db.session import SessionLocal
+from backend.app.models import Task
+from backend.app.services.healing_loop import healing_loop
 
-from app.api.v1 import api_router
+from backend.app.api.v1 import api_router
 
 import asyncio
 

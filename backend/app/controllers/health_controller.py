@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.utils.ollama_healthcheck import check_ollama_health
+from backend.app.utils.ollama_healthcheck import check_ollama_health
 
 router = APIRouter()
 

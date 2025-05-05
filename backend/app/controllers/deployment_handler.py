@@ -1,9 +1,9 @@
 import os
 import json
 from datetime import datetime
-from app.controllers.ssh_client import SSHClientManager
-from app.db.session import get_db_session  # ✅ For memory tracking
-from app.db.tasks import add_memory_entry  # ✅ Memory ledger log
+from backend.app.controllers.ssh_client import SSHClientManager
+from backend.app.db.session import get_db_session  # ✅ For memory tracking
+from backend.app.db.tasks import add_memory_entry  # ✅ Memory ledger log
 from typing import Dict
 
 class DeploymentHandler:

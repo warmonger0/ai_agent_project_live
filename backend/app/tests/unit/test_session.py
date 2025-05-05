@@ -1,4 +1,4 @@
-from app.db.session import SessionLocal, get_db, get_db_session
+from backend.app.db.session import SessionLocal, get_db, get_db_session
 from sqlalchemy.orm import Session
 import types
 

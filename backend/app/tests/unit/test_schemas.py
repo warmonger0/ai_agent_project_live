@@ -1,5 +1,5 @@
 import pytest
-from app.schemas import (
+from backend.app.schemas import (
     TaskRequest,
     TaskResponse,
     TaskStatusResponse,

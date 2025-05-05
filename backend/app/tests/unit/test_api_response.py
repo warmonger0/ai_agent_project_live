@@ -1,4 +1,4 @@
-from app.core.api_response import success_response, error_response
+from backend.app.core.api_response import success_response, error_response
 
 def test_success_response_basic():
     data = {"foo": "bar"}

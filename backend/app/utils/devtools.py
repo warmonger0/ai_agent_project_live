@@ -1,8 +1,8 @@
 # backend/app/utils/devtools.py
 
 from datetime import datetime
-from app.db.session import SessionLocal
-from app.models import Task
+from backend.app.db.session import SessionLocal
+from backend.app.models import Task
 
 def insert_dummy_task():
     db = SessionLocal()

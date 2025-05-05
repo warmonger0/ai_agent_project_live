@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from unittest.mock import patch, mock_open
-from app.controllers.healing_controller import router
+from backend.app.controllers.healing_controller import router
 from fastapi import FastAPI
 
 app = FastAPI()

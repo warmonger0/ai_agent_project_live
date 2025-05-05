@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.core.api_response import success_response
+from backend.app.core.api_response import success_response
 
 router = APIRouter()
 

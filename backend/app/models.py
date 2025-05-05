@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Index
-from app.db.session import Base
+from backend.app.db.session import Base
 
 # --- Task Model ---
 class Task(Base):

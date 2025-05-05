@@ -1,4 +1,4 @@
-from app.utils.json_utils import safe_json_parse
+from backend.app.utils.json_utils import safe_json_parse
 
 def test_safe_json_parse_valid():
     raw = '{"foo": "bar"}'

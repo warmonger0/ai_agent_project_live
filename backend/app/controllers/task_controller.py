@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.db import tasks as task_db
-from app.db.tasks import add_memory_entry
-from app.models import Task, PluginExecution
+from backend.app.db.session import get_db
+from backend.app.db import tasks as task_db
+from backend.app.db.tasks import add_memory_entry
+from backend.app.models import Task, PluginExecution
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 

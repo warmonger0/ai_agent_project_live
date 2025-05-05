@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     app_env: str
     database_url: str
     frontend_url: str
-
-    enable_healing_loop: bool = False  # ✅ NEW: toggle for healing loop
+    enable_healing_loop: bool = False  # ✅ Toggle for healing loop
+    push_api_key: str  # ✅ New: include support for .env-defined API key
 
     model_config = SettingsConfigDict(env_file=".env")
 

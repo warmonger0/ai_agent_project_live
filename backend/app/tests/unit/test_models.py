@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import Base, Task, PluginExecution, MemoryLedger
+from backend.app.models import Base, Task, PluginExecution, MemoryLedger
 from datetime import datetime
 
 # Use in-memory SQLite DB for test isolation

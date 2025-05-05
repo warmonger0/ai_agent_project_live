@@ -2,7 +2,7 @@ import pytest
 import os
 import tempfile
 import shutil
-from app.plugins import loader as plugin_loader
+from backend.app.plugins import loader as plugin_loader
 
 @pytest.fixture
 def temp_plugin_dir():

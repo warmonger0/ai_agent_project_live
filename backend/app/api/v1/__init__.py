@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.controllers import (
+from backend.app.controllers import (
     health_controller,
     task_controller,
     healing_controller,
@@ -8,7 +8,7 @@ from app.controllers import (
     status_controller,
 )
 
-from app.routes.plugin_routes import router as plugin_router
+from backend.app.routes.plugin_routes import router as plugin_router
 
 # -----------------------------------
 # Main versioned API router

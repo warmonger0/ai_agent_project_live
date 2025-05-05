@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from app.controllers.status_controller import router
+from backend.app.controllers.status_controller import router
 
 app = FastAPI()
 app.include_router(router)

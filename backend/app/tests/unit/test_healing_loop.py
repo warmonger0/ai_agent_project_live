@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock, AsyncMock
-from app.services.healing_loop import reset_failed_tasks, healing_loop
+from backend.app.services.healing_loop import reset_failed_tasks, healing_loop
 
 def test_reset_failed_tasks_resets_and_commits():
     mock_task1 = MagicMock(id=1, status="failed")

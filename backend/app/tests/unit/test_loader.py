@@ -1,6 +1,6 @@
 import types
 from unittest.mock import patch, MagicMock
-from app.plugins.loader import discover_plugins, load_plugin_class
+from backend.app.plugins.loader import discover_plugins, load_plugin_class
 
 @patch("app.plugins.loader.os.listdir", return_value=["my_plugin.py"])
 @patch("app.plugins.loader.importlib.util.spec_from_file_location")
