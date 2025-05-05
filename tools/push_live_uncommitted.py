@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
 
     # Check if there are actually any staged changes
     if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-        print("⚠️ No staged changes to commit. Skipping push.")
+        print("⚠️ No staged changes to commit. Skipping push and listening for new changes...")
         exit(0)
 
     # Commit changes
