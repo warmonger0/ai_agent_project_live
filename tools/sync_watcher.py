@@ -20,22 +20,27 @@ ignore_spec = pathspec.PathSpec.from_lines(
 )
 
 def is_ignored(path: Path) -> bool:
+    """Check if the file path should be ignored based on .syncignore patterns."""
     try:
         rel_path = str(path.relative_to(SRC))
     except ValueError:
-        return True  # Outside project
+        return True  # Outside of project folder
     return ignore_spec.match_file(rel_path)
 
 def log(msg):
+    """Log messages to both console and log file."""
     print(msg)
     with open(SYNC_LOG, "a") as f:
         f.write(f"{msg}\n")
 
-def trigger_push():
-    result = subprocess.run(["python3", str(PUSH_SCRIPT)],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True)
+def trigger_push(changed_file: Path):
+    """Trigger the push script only for relevant changes."""
+    result = subprocess.run(
+        ["python3", str(PUSH_SCRIPT), str(changed_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
     if result.stdout.strip():
         log(result.stdout.strip())
     if result.stderr.strip():
@@ -47,6 +52,7 @@ class PushHandler(FileSystemEventHandler):
     debounce_interval = 1  # seconds
 
     def on_any_event(self, event):
+        """Handle file system changes."""
         now = time.time()
         path = Path(event.src_path)
 
@@ -60,9 +66,10 @@ class PushHandler(FileSystemEventHandler):
 
         self.last_trigger = now
         log(f"📦 Detected change: {path}")
-        trigger_push()
+        trigger_push(path)
 
 def main():
+    """Start the GitHub push watcher and monitor changes."""
     log("=== GitHub Push Watcher Started ===")
     observer = Observer()
     observer.schedule(PushHandler(), path=str(SRC), recursive=True)
