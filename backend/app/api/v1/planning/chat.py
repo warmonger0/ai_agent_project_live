@@ -4,7 +4,6 @@ import httpx
 import logging
 logger = logging.getLogger(__name__)
 
-
 router = APIRouter()
 
 class ChatMessage(BaseModel):
