@@ -26,7 +26,7 @@ it("should throw if VITE_API_BASE_URL is undefined", async () => {
 
   const originalBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
+  await expect(sendChatMessage(mockRequest, undefined)).rejects.toThrow(
     "VITE_API_BASE_URL is not defined"
   );
 });
