@@ -4,6 +4,9 @@ from fastapi.exceptions import RequestValidationError
 
 from backend.app.core import error_handler
 from backend.app.core.config import settings
+
+print(f"[DEBUG] vite_api_base_url: {settings.vite_api_base_url}")
+
 from backend.app.db.session import engine, Base
 from backend.app.db.session import SessionLocal
 from backend.app.models import Task
