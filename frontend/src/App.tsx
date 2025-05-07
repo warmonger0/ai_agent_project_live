@@ -19,35 +19,39 @@ const App: React.FC = () => {
     <Router>
       <div className="min-h-screen bg-gray-100">
         {/* ✅ Navigation */}
-        <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
-          <div className="max-w-6xl mx-auto flex flex-wrap gap-4 sm:gap-6">
-            <Link
-                to="/command"
-                className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-                Command Panel
-            </Link>
-            <Link
-              to="/tasks"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              Tasks
-            </Link>
-            <Link
-              to="/health"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              System Health
-            </Link>
-            <Link
-              to="/deployments"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              Deployment Logs
-            </Link>
-            
-          </div>
-        </nav>
+        <nav className="bg-white shadow-md border-b border-gray-200">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between h-16 items-center">
+      <div className="flex space-x-6">
+        <Link
+          to="/"
+          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+        >
+          Command Panel
+        </Link>
+        <Link
+          to="/tasks"
+          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+        >
+          Tasks
+        </Link>
+        <Link
+          to="/health"
+          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+        >
+          System Health
+        </Link>
+        <Link
+          to="/deployments"
+          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+        >
+          Deployment Logs
+        </Link>
+      </div>
+    </div>
+  </div>
+</nav>
+
 
         {/* ✅ Main Route Content */}
         <main className="pt-4">
