@@ -73,7 +73,7 @@
 
 @layer base {
   * {
-    @apply border border-gray-300 outline-gray-500;
+    @apply border-skin-border outline-skin-ring/50;
   }
 
   body {
