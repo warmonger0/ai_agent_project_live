@@ -8,8 +8,8 @@ import {
   cleanup,
 } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
-import ChatPanel from "../components/planning/ChatPanel";
-import { sendChatMessage } from "../lib/sendChatMessage";
+import ChatPanel from "../../components/planning/ChatPanel";
+import { sendChatMessage } from "../../lib/sendChatMessage";
 
 // Mock the sendChatMessage function
 vi.mock("../lib/sendChatMessage");
