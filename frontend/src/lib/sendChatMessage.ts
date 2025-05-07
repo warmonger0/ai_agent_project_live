@@ -1,6 +1,3 @@
-const apiUrl =
-  import.meta.env.VITE_API_BASE_URL || "http://http://192.168.50.142:8000";
-
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
