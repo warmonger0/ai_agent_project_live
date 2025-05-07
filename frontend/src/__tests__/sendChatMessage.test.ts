@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { sendChatMessage } from "../sendChatMessage";
+import { sendChatMessage } from "../lib/sendChatMessage";
 
 describe("sendChatMessage", () => {
   const originalEnv = import.meta.env;
