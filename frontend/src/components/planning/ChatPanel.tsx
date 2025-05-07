@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import sendChatMessage from "@/lib/api/sendChatMessage";
+import sendChatMessage from "@/lib/sendChatMessage";
 
 interface ChatMessage {
   role: "user" | "assistant";
