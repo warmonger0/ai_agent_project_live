@@ -20,37 +20,37 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-gray-100">
         {/* ✅ Navigation */}
         <nav className="bg-white shadow-md border-b border-gray-200">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex justify-between h-16 items-center">
-      <div className="flex space-x-6">
-        <Link
-          to="/"
-          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-        >
-          Command Panel
-        </Link>
-        <Link
-          to="/tasks"
-          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-        >
-          Tasks
-        </Link>
-        <Link
-          to="/health"
-          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-        >
-          System Health
-        </Link>
-        <Link
-          to="/deployments"
-          className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-        >
-          Deployment Logs
-        </Link>
-      </div>
-    </div>
-  </div>
-</nav>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              <div className="flex space-x-6">
+                <Link
+                  to="/"
+                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+                >
+                  Command Panel
+                </Link>
+                <Link
+                  to="/tasks"
+                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+                >
+                  Tasks
+                </Link>
+                <Link
+                  to="/health"
+                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+                >
+                  System Health
+                </Link>
+                <Link
+                  to="/deployments"
+                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
+                >
+                  Deployment Logs
+                </Link>
+              </div>
+            </div>
+          </div>
+        </nav>
 
 
         {/* ✅ Main Route Content */}
