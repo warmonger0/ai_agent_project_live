@@ -25,3 +25,4 @@ api_router.include_router(status_controller.router, prefix="/status", tags=["sta
 
 # ✅ Grouped plugin routes under /api/v1/plugins/
 api_router.include_router(plugin_router, prefix="/plugins", tags=["plugins"])
+api_router.include_router(chat.router, prefix="/planning", tags=["planning"])
