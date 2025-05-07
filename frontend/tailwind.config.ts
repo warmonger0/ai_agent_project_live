@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 
 const config: Config = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -11,8 +12,9 @@ const config: Config = {
         xl: "calc(var(--radius) + 4px)",
       },
       colors: {
-        // ✅ Keep Tailwind default grays
-        // ❗ Add custom vars under a different key (like `skin`)
+        // Retain default colors
+        ...colors,
+        // Add your custom colors under a separate key to avoid conflicts
         skin: {
           background: "var(--color-background)",
           foreground: "var(--color-foreground)",
