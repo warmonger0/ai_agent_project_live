@@ -17,7 +17,7 @@ export async function sendChatMessage(
   payload: ChatRequest
 ): Promise<ChatResponse> {
   const response = await fetch(
-    "http://192.168.50.142:8000/api/v1/planning/chat",
+    `${import.meta.env.VITE_API_BASE_URL}/api/v1/planning/chat`,
     {
       method: "POST",
       headers: {
