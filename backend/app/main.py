@@ -13,26 +13,27 @@ from backend.app.api.v1 import api_router
 from backend.app.controllers import logs_controller  # ✅ Add this import
 
 import asyncio
+import logging
 
-app = FastAPI(
-    import logging
-
-    logging.basicConfig(
+# ✅ Configure Logging to display DEBUG or WARNING messages in console
+logging.basicConfig(
     level=logging.WARNING,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
+# ✅ FastAPI application setup
+app = FastAPI(
     title="Local AI Agent Brain",
     version="1.0.0",
     description="Backend services for AI Agent task routing, plugin execution, and monitoring.",
 )
 
-# Error handlers
+# ✅ Error handlers
 app.add_exception_handler(HTTPException, error_handler.http_exception_handler)
 app.add_exception_handler(RequestValidationError, error_handler.validation_exception_handler)
 app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
 
-# CORS setup
+# ✅ CORS setup
 allowed_origins = [settings.frontend_url] if settings.app_env == "production" else ["*"]
 app.add_middleware(
     CORSMiddleware,
@@ -42,16 +43,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ API route prefixes
+# ✅ Mount API routes
 app.include_router(api_router, prefix="/api/v1")
-app.include_router(logs_controller.router)  # ✅ Mount /logs route
+app.include_router(logs_controller.router)  # Mount /logs route
 
-# Root route
+# ✅ Root route
 @app.get("/")
 async def root():
     return {"message": f"Local AI Agent Brain Running in {settings.app_env} mode"}
 
-# Startup logic
+# ✅ Startup hook
 @app.on_event("startup")
 async def startup_event():
     Base.metadata.create_all(bind=engine)
