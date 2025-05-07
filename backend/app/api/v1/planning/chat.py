@@ -20,21 +20,21 @@ class ChatResponse(BaseModel):
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_deepseek(request: ChatRequest):
-    logging.warning("[CHAT API] Received message: %s", request.messages)
-
     try:
+        logging.warning("[CHAT] Request payload: %s", request.dict())
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
                 json={
                     "model": "deepseek-coder:latest",
-                    "messages": [m.dict() for m in request.messages],
+                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                     "stream": False,
                 },
                 timeout=60,
             )
 
-        logging.warning("[CHAT API] Ollama raw response: %s", response.text)
+        logging.warning("[CHAT] Ollama raw response: %s", response.text)
 
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"Ollama error: {response.status_code} - {response.text}")
@@ -42,7 +42,7 @@ async def chat_with_deepseek(request: ChatRequest):
         data = response.json()
 
         if "message" not in data or "content" not in data["message"]:
-            raise HTTPException(status_code=500, detail=f"Malformed DeepSeek response: {data}")
+            raise HTTPException(status_code=500, detail=f"Unexpected DeepSeek format: {data}")
 
         return {
             "choices": [
@@ -56,5 +56,5 @@ async def chat_with_deepseek(request: ChatRequest):
         }
 
     except Exception as e:
-        logging.exception("[CHAT API] Exception during Ollama call")
+        logging.exception("[CHAT ERROR] Failed during chat_with_deepseek:")
         raise HTTPException(status_code=500, detail=str(e))
