@@ -1,33 +1,51 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { sendChatMessage } from "../lib/sendChatMessage";
-import type { ChatRequest } from "../lib/sendChatMessage";
+it("should throw an error if the response is not ok", async () => {
+  // @ts-ignore
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ detail: "Internal Server Error" }),
+    })
+  );
 
-describe("sendChatMessage", () => {
-  const mockResponse = { message: "Hello from AI" };
+  const mockRequest: ChatRequest = {
+    messages: [{ role: "user", content: "Trigger failure" }],
+  };
 
-  beforeEach(() => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      })
-    ) as unknown as typeof fetch;
-  });
+  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
+    "Network response was not ok"
+  );
+});
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+it("should throw if VITE_API_BASE_URL is undefined", async () => {
+  const originalBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  // @ts-ignore
+  delete import.meta.env.VITE_API_BASE_URL;
 
-  it("should send a message and receive a response", async () => {
-    const mockRequest: ChatRequest = {
-      messages: [{ role: "user", content: "Test message" }],
-    };
+  const mockRequest: ChatRequest = {
+    messages: [{ role: "user", content: "Missing env" }],
+  };
 
-    const response = await sendChatMessage(mockRequest);
-    expect(response).toEqual(mockResponse);
-    expect(fetch).toHaveBeenCalledWith(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/planning/chat`,
-      expect.any(Object)
-    );
-  });
+  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
+    "VITE_API_BASE_URL is not defined"
+  );
+
+  // Restore base URL
+  import.meta.env.VITE_API_BASE_URL = originalBaseUrl;
+});
+
+it("should throw if response is not valid JSON", async () => {
+  // @ts-ignore
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.reject(new Error("Invalid JSON")),
+    })
+  );
+
+  const mockRequest: ChatRequest = {
+    messages: [{ role: "user", content: "Invalid JSON" }],
+  };
+
+  await expect(sendChatMessage(mockRequest)).rejects.toThrow("Invalid JSON");
 });
