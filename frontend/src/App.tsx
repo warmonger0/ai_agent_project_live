@@ -19,39 +19,24 @@ const App: React.FC = () => {
     <Router>
       <div className="min-h-screen bg-gray-100">
         {/* ✅ Navigation */}
-        <nav className="bg-white shadow-md border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              <div className="flex space-x-6">
-                <Link
-                  to="/"
-                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-                >
-                  Command Panel
-                </Link>
-                <Link
-                  to="/tasks"
-                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-                >
-                  Tasks
-                </Link>
-                <Link
-                  to="/health"
-                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-                >
-                  System Health
-                </Link>
-                <Link
-                  to="/deployments"
-                  className="text-gray-700 font-semibold hover:text-blue-600 transition duration-300"
-                >
-                  Deployment Logs
-                </Link>
-              </div>
-            </div>
+        <nav className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center gap-4 px-4 py-3">
+            {[
+              { to: "/tasks", label: "Tasks" },
+              { to: "/health", label: "System Health" },
+              { to: "/deployments", label: "Deployment Logs" },
+              { to: "/command", label: "Command Panel" },
+            ].map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="px-4 py-2 text-sm font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 transition"
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         </nav>
-
 
         {/* ✅ Main Route Content */}
         <main className="pt-4">
