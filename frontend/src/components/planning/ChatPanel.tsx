@@ -25,7 +25,7 @@ const ChatPanel: React.FC = () => {
       const response = await sendChatMessage(chatRequest);
 
       const replyContent =
-        response?.choices?.[0]?.message?.content || "No response.";
+        response.choices?.[0]?.message?.content || "No response.";
 
       const assistantMessage: ChatMessage = {
         role: "assistant",
