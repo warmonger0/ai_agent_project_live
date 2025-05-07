@@ -21,7 +21,8 @@ const ChatPanel: React.FC = () => {
     setLoading(true);
 
     try {
-      const chatRequest = { messages: [userMessage] };
+      const chatRequest = { messages: [...messages, userMessage] };
+
       const response = await sendChatMessage(chatRequest);
 
       const replyContent =
