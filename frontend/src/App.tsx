@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import "./index.css";
 import TaskDashboard from "./pages/TaskDashboard";
 import SystemHealth from "./pages/SystemHealth";
 import DeploymentLogs from "./pages/DeploymentLogs";
