@@ -15,6 +15,13 @@ from backend.app.controllers import logs_controller  # ✅ Add this import
 import asyncio
 
 app = FastAPI(
+    import logging
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
     title="Local AI Agent Brain",
     version="1.0.0",
     description="Backend services for AI Agent task routing, plugin execution, and monitoring.",
