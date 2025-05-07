@@ -28,7 +28,7 @@ describe("ChatPanel Component", () => {
 
   it("sends a message and displays the response", async () => {
     // Mock the API response
-    (sendChatMessage as vi.Mock).mockResolvedValueOnce(mockResponse);
+    (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
 
@@ -52,7 +52,7 @@ describe("ChatPanel Component", () => {
 
   it("displays an error message when the API call fails", async () => {
     // Mock the API to throw an error
-    (sendChatMessage as vi.Mock).mockRejectedValueOnce(new Error("API Error"));
+    (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
 
