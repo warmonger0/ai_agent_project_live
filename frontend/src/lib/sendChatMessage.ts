@@ -1,31 +1,41 @@
-export type ChatRequest = {
-  messages: { role: string; content: string }[];
-};
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[];
+}
+
+export interface ChatResponse {
+  choices: { message: ChatMessage }[];
+}
 
 export async function sendChatMessage(
-  request: ChatRequest,
+  payload: ChatRequest,
   baseUrlOverride?: string
-): Promise<any> {
-  const baseUrl = baseUrlOverride ?? import.meta.env.VITE_API_BASE_URL;
+): Promise<ChatResponse> {
+  const API_BASE_URL = baseUrlOverride ?? import.meta.env.VITE_API_BASE_URL;
 
-  if (!baseUrl) {
+  if (!API_BASE_URL) {
     throw new Error("VITE_API_BASE_URL is not defined");
   }
 
-  const res = await fetch(`${baseUrl}/api/v1/planning/chat`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/planning/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error("Network response was not ok");
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Chat request failed: ${response.status} - ${error}`);
   }
 
   try {
-    return await res.json();
+    return await response.json();
   } catch {
     throw new Error("Invalid JSON");
   }
