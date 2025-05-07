@@ -27,7 +27,7 @@ it("should throw if VITE_API_BASE_URL is undefined", async () => {
   // Simulate undefined config — and stub fetch to prove it's not called
   const spy = vi.spyOn(global, "fetch");
 
-  await expect(sendChatMessage(mockRequest, undefined)).rejects.toThrow(
+  await expect(sendChatMessage(mockRequest, null)).rejects.toThrow(
     "VITE_API_BASE_URL is not defined"
   );
 
