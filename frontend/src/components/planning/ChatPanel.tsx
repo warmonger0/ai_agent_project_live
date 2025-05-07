@@ -1,62 +1,81 @@
-// frontend/src/components/planning/ChatPanel.tsx
-
 import React, { useState } from "react";
+import sendChatMessage from "@/lib/api/sendChatMessage";
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
 
 const ChatPanel: React.FC = () => {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: string; text: string }[]>(
-    []
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const sendMessage = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", text: input };
+    const userMessage: ChatMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
-
-    const res = await fetch("/api/v1/planning/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input }),
-    });
-
-    const data = await res.json();
-    const agentMessage = { role: "agent", text: data.reply };
-
-    setMessages((prev) => [...prev, agentMessage]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const response = await sendChatMessage(input);
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: response || "No response.",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "❌ Error: Could not get a response." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="p-4 space-y-4 h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto bg-gray-50 border rounded p-2 space-y-2">
-        {messages.map((msg, i) => (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+        {messages.map((msg, idx) => (
           <div
-            key={i}
-            className={`p-2 rounded ${
-              msg.role === "user" ? "bg-blue-100" : "bg-green-100"
+            key={idx}
+            className={`p-3 rounded-md max-w-xl ${
+              msg.role === "user"
+                ? "bg-blue-100 self-end text-right"
+                : "bg-gray-100 self-start text-left"
             }`}
           >
-            <strong>{msg.role === "user" ? "You" : "Agent"}:</strong> {msg.text}
+            {msg.content}
           </div>
         ))}
+        {loading && (
+          <div className="text-gray-500 italic self-start">Thinking...</div>
+        )}
       </div>
 
-      <div className="flex gap-2">
+      <form
+        onSubmit={handleSubmit}
+        className="p-4 border-t border-gray-200 bg-gray-50 flex items-center"
+      >
         <input
-          className="flex-1 border rounded px-3 py-2"
-          placeholder="Ask the agent..."
+          type="text"
+          placeholder="Ask the agent something..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="flex-1 px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
         />
         <button
-          onClick={sendMessage}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          type="submit"
+          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
         >
           Send
         </button>
-      </div>
+      </form>
     </div>
   );
 };
