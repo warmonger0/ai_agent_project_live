@@ -29,3 +29,6 @@ router.include_router(health_router, prefix="/api/v1", tags=["health"])
 
 # Logs
 router.include_router(logs_router, prefix="/api/v1/logs", tags=["logs"])
+
+#command panel routes
+router.include_router(planning_chat.router, prefix="/planning", tags=["planning"])
