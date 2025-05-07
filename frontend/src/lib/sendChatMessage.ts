@@ -1,5 +1,3 @@
-// /frontend/src/lib/sendChatMessage.ts
-
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -16,16 +14,21 @@ export interface ChatResponse {
 export async function sendChatMessage(
   payload: ChatRequest
 ): Promise<ChatResponse> {
-  const response = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL}/api/v1/planning/chat`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  if (!API_BASE_URL) {
+    throw new Error(
+      "VITE_API_BASE_URL is not defined in the environment variables."
+    );
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/planning/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
   if (!response.ok) {
     const error = await response.text();
