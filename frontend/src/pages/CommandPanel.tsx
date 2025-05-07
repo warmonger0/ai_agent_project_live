@@ -1,7 +1,7 @@
 import React from 'react';
-import Sidebar from '../components/commandPanel/Sidebar';
-import ChatPanel from '../components/commandPanel/ChatPanel';
-import TabbedPanel from '../components/commandPanel/TabbedPanel';
+import Sidebar from '../components/planning/Sidebar';
+import ChatPanel from '../components/planning/ChatPanel';
+import TabbedPanel from '../components/planning/TabbedPanel';
 
 const CommandPanel: React.FC = () => {
   return (

@@ -1,9 +1,12 @@
-export default function ChatPanel() {
-    return (
-      <div className="h-full w-full overflow-y-auto">
-        <div className="text-sm text-gray-700">[DeepSeek]: How can I help you plan this project?</div>
-        {/* Future: render message list and input box */}
-      </div>
-    );
-  }
-  
+import React from 'react';
+
+const ChatPanel: React.FC = () => {
+  return (
+    <div className="flex-1 p-4 border-b border-gray-200">
+      <h2 className="text-lg font-semibold mb-2">DeepSeek Chat</h2>
+      <div className="bg-white p-4 rounded shadow">Chat interface goes here.</div>
+    </div>
+  );
+};
+
+export default ChatPanel;

@@ -10,6 +10,7 @@ import {
 import TaskDashboard from "./pages/TaskDashboard";
 import SystemHealth from "./pages/SystemHealth";
 import DeploymentLogs from "./pages/DeploymentLogs";
+import CommandPanel from "./pages/CommandPanel";
 
 import { Toaster } from "sonner";
 
@@ -20,6 +21,12 @@ const App: React.FC = () => {
         {/* ✅ Navigation */}
         <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
           <div className="max-w-6xl mx-auto flex flex-wrap gap-4 sm:gap-6">
+            <Link
+                to="/command"
+                className="text-indigo-600 font-medium hover:text-indigo-800 transition"
+            >
+                Command Panel
+            </Link>
             <Link
               to="/tasks"
               className="text-indigo-600 font-medium hover:text-indigo-800 transition"
@@ -38,6 +45,7 @@ const App: React.FC = () => {
             >
               Deployment Logs
             </Link>
+            
           </div>
         </nav>
 
@@ -48,6 +56,7 @@ const App: React.FC = () => {
             <Route path="/tasks" element={<TaskDashboard />} />
             <Route path="/health" element={<SystemHealth />} />
             <Route path="/deployments" element={<DeploymentLogs />} />
+            <Route path="/command" element={<CommandPanel />} /> {/* ✅ NEW */}
           </Routes>
         </main>
 
