@@ -1,3 +1,7 @@
+type ChatRequest = {
+  messages: { role: string; content: string }[];
+};
+
 it("should throw an error if the response is not ok", async () => {
   // @ts-ignore
   global.fetch = vi.fn(() =>
