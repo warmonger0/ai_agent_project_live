@@ -1,7 +1,7 @@
 // File: /frontend/src/__tests__/ChatPanel.test.tsx
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import ChatPanel from "../components/planning/ChatPanel";
 import { sendChatMessage } from "../lib/sendChatMessage";
 
