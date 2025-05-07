@@ -44,7 +44,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("twAnimate")],
+  plugins: [twAnimate],
 };
 
 export default config;
