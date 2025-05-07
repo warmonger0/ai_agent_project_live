@@ -16,13 +16,16 @@ export interface ChatResponse {
 export async function sendChatMessage(
   payload: ChatRequest
 ): Promise<ChatResponse> {
-  const response = await fetch("http://localhost:8000/api/v1/planning/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    "http://192.168.50.142:8000/api/v1/planning/chat",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!response.ok) {
     const error = await response.text();
