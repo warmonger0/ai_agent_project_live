@@ -1,7 +1,8 @@
 // File: /frontend/src/__tests__/ChatPanel.test.tsx
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest";
 import ChatPanel from "../components/planning/ChatPanel";
 import { sendChatMessage } from "../lib/sendChatMessage";
 
@@ -14,8 +15,12 @@ describe("ChatPanel Component", () => {
   };
 
   beforeEach(() => {
-    // Reset mocks before each test
     vi.clearAllMocks();
+  });
+
+  // ✅ Add best-practice mock restore here
+  afterEach(() => {
+    vi.resetAllMocks(); // Ensures mock history/state is wiped clean
   });
 
   it("renders the input field and send button", () => {
@@ -27,45 +32,32 @@ describe("ChatPanel Component", () => {
   });
 
   it("sends a message and displays the response", async () => {
-    // Mock the API response
     (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
-
     const input = screen.getByPlaceholderText("Type your message...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
-    // Simulate user typing a message
     fireEvent.change(input, { target: { value: "Hello" } });
-
-    // Simulate clicking the send button
     fireEvent.click(sendButton);
 
-    // Wait for the assistant's response to appear
     await waitFor(() => {
       expect(screen.getByText("Hello from AI")).toBeInTheDocument();
     });
 
-    // Ensure the input field is cleared after sending
     expect((input as HTMLInputElement).value).toBe("");
   });
 
   it("displays an error message when the API call fails", async () => {
-    // Mock the API to throw an error
     (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
-
     const input = screen.getByPlaceholderText("Type your message...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
-    // Simulate user typing a message
     fireEvent.change(input, { target: { value: "Hello" } });
-
-    // Simulate clicking the send button
     fireEvent.click(sendButton);
 
-    // Wait for the error message to appear
     await waitFor(() => {
       expect(screen.getByText(/error/i)).toBeInTheDocument();
     });
