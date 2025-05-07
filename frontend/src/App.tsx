@@ -19,8 +19,6 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
-        <h1 className="text-3xl font-bold text-red-500">Tailwind works!</h1>
-
         {/* ✅ Navigation */}
         <nav className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
