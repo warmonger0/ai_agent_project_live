@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import httpx
 import logging
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -21,29 +20,29 @@ class ChatResponse(BaseModel):
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_deepseek(request: ChatRequest):
+    logging.warning("[CHAT API] Received message: %s", request.messages)
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
                 json={
                     "model": "deepseek-coder:latest",
-                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
+                    "messages": [m.dict() for m in request.messages],
                     "stream": False,
                 },
                 timeout=60,
             )
 
-        # Log full response for debugging
-        logging.warning("[DeepSeek DEBUG] Raw response from Ollama:\n%s", response.text)
+        logging.warning("[CHAT API] Ollama raw response: %s", response.text)
 
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"Ollama error: {response.status_code} - {response.text}")
 
         data = response.json()
 
-        # Defensive validation of expected structure
         if "message" not in data or "content" not in data["message"]:
-            raise HTTPException(status_code=500, detail=f"Invalid DeepSeek response structure: {data}")
+            raise HTTPException(status_code=500, detail=f"Malformed DeepSeek response: {data}")
 
         return {
             "choices": [
@@ -57,5 +56,5 @@ async def chat_with_deepseek(request: ChatRequest):
         }
 
     except Exception as e:
-        logging.exception("[DeepSeek ERROR] Exception occurred:")
+        logging.exception("[CHAT API] Exception during Ollama call")
         raise HTTPException(status_code=500, detail=str(e))
