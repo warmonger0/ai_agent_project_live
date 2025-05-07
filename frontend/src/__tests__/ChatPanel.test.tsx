@@ -2,7 +2,7 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import ChatPanel from "../components/ChatPanel";
+import ChatPanel from "../components/planning/ChatPanel";
 import { sendChatMessage } from "../lib/sendChatMessage";
 
 // Mock the sendChatMessage function
