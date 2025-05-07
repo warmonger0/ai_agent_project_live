@@ -1,4 +1,5 @@
-import axios from "axios";
+import api from "@/lib/services/api";
+import { unwrapApiResponse } from "@/lib/utils/apiHelpers";
 import type {
   PluginSpec,
   PluginInputField,
@@ -7,49 +8,23 @@ import type {
 
 // 🔍 List all available plugins
 export const fetchPlugins = async (): Promise<PluginSpec[]> => {
-  const response = await axios.get("/api/v1/plugins");
-  const data = response.data;
-
-  if (
-    import.meta.env.MODE === "development" &&
-    !Array.isArray(data?.data?.plugins)
-  ) {
-    console.warn("Unexpected plugin list shape:", data);
-  }
-
-  return Array.isArray(data?.data?.plugins) ? data.data.plugins : [];
+  const res = await api.get("/api/v1/plugins/");
+  const data = unwrapApiResponse<{ plugins: PluginSpec[] }>(res);
+  return data.plugins || [];
 };
 
 // 📋 Get plugin input spec
 export const fetchPluginSpec = async (
   pluginName: string
 ): Promise<PluginInputField[]> => {
-  const response = await axios.get(`/api/v1/plugins/${pluginName}/spec`);
-  const data = response.data;
-
-  if (
-    import.meta.env.MODE === "development" &&
-    !Array.isArray(data?.data?.input_spec)
-  ) {
-    console.warn("Unexpected plugin spec shape:", data);
-  }
-
-  return Array.isArray(data?.data?.input_spec) ? data.data.input_spec : [];
+  const res = await api.get(`/api/v1/plugins/${pluginName}/spec`);
+  return unwrapApiResponse<PluginInputField[]>(res);
 };
 
 // 📜 Fetch plugin execution history
 export const fetchPluginHistory = async (): Promise<PluginExecution[]> => {
-  const response = await axios.get("/api/v1/plugin/history");
-  const data = response.data;
-
-  if (
-    import.meta.env.MODE === "development" &&
-    !Array.isArray(data?.data)
-  ) {
-    console.warn("Unexpected history shape:", data);
-  }
-
-  return Array.isArray(data?.data) ? data.data : [];
+  const res = await api.get("/api/v1/plugins/history");
+  return unwrapApiResponse<PluginExecution[]>(res);
 };
 
 // 🧠 Execute a plugin with dynamic inputs
@@ -57,23 +32,8 @@ export const runPlugin = async (
   pluginName: string,
   inputs: Record<string, unknown>
 ): Promise<unknown> => {
-  const payload = { ...inputs };
-
-  if (import.meta.env.MODE === "development") {
-    console.log("📤 Running plugin with payload:", payload);
-  }
-
-  const response = await axios.post(`/api/v1/plugins/run/${pluginName}`, payload);
-  const data = response.data;
-
-  if (
-    import.meta.env.MODE === "development" &&
-    !data?.data?.result && !data?.data
-  ) {
-    console.warn("Unexpected runPlugin result:", data);
-  }
-
-  return data?.data?.result ?? data?.data ?? "No result";
+  const res = await api.post(`/api/v1/plugins/run/${pluginName}`, inputs);
+  return unwrapApiResponse(res);
 };
 
 // 🧪 Format plugin output

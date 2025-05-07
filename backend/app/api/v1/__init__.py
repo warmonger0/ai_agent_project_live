@@ -1,16 +1,28 @@
+from backend.app.api.v1.planning import chat
 from fastapi import APIRouter
-from app.controllers import (
+
+from backend.app.controllers import (
     health_controller,
     task_controller,
     healing_controller,
+    logs_controller,
+    status_controller,
 )
-from app.controllers.logs_controller import router as logs_router
-from app.controllers.plugin_controller import router as plugin_router
 
+from backend.app.routes.plugin_routes import router as plugin_router
+
+# -----------------------------------
+# Main versioned API router
+# -----------------------------------
 api_router = APIRouter()
 
-api_router.include_router(health_controller.router)
-api_router.include_router(task_controller.router)
-api_router.include_router(logs_router)
-api_router.include_router(healing_controller.router)
-api_router.include_router(plugin_router)
+# ✅ Core controller groups
+api_router.include_router(health_controller.router, prefix="/health", tags=["health"])
+api_router.include_router(task_controller.router, prefix="/tasks", tags=["tasks"])
+api_router.include_router(healing_controller.router, prefix="/healing", tags=["healing"])
+api_router.include_router(logs_controller.router, prefix="/logs", tags=["logs"])
+api_router.include_router(status_controller.router, prefix="/status", tags=["status"])
+
+# ✅ Grouped plugin routes under /api/v1/plugins/
+api_router.include_router(plugin_router, prefix="/plugins", tags=["plugins"])
+api_router.include_router(chat.router, prefix="/planning", tags=["planning"])

@@ -1,5 +1,6 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox"; // ✅ Only if you use Radix/your custom checkbox
 
 interface InputField {
   name: string;
@@ -10,7 +11,7 @@ interface InputField {
 
 interface Props {
   inputSpec?: InputField[];
-  onChange: (name: string, value: string) => void;
+  onChange: (name: string, value: string | boolean) => void;
 }
 
 export default function PluginExecutionForm({ inputSpec = [], onChange }: Props) {
@@ -22,13 +23,24 @@ export default function PluginExecutionForm({ inputSpec = [], onChange }: Props)
             <label htmlFor={name} className="block font-medium text-sm">
               {label}
             </label>
-            <Input
-              id={name}
-              name={name}
-              type={type}
-              required={required}
-              onChange={(e) => onChange(name, e.target.value)}
-            />
+
+            {type === "boolean" ? (
+              <input
+                id={name}
+                name={name}
+                type="checkbox"
+                onChange={(e) => onChange(name, e.target.checked)}
+              />
+            ) : (
+              <Input
+                id={name}
+                name={name}
+                type={type}
+                required={required}
+                placeholder="Enter input..."
+                onChange={(e) => onChange(name, e.target.value)}
+              />
+            )}
           </div>
         ))}
     </div>

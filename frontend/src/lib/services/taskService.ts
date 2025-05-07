@@ -1,15 +1,15 @@
-import axios from "axios";
+import api from "./api"; // Use shared Axios instance with baseURL
 
-// ✅ Fetch all tasks
+// ✅ Fetch all tasks from the correct backend route
 export const fetchTasks = async () => {
-  const response = await axios.get("/api/v1/status/all"); // Matches FastAPI GET route
-  return response.data;
+  const response = await api.get("/api/v1/tasks"); // ✅ FIXED endpoint
+  return response; // Let the caller handle .data
 };
 
 // ✅ Retry a task by ID
-export const retryTask = async (taskId) => {
+export const retryTask = async (taskId: number) => {
   try {
-    const response = await axios.post(`/retry/${taskId}`);
+    const response = await api.post(`/api/v1/retry/${taskId}`);
     return response.data;
   } catch (err) {
     console.error("Error retrying task:", err);
@@ -18,13 +18,12 @@ export const retryTask = async (taskId) => {
 };
 
 // ✅ Create a new task
-export const createTask = async (description, model_used = "DeepSeek") => {
+export const createTask = async (description: string, model_used = "DeepSeek") => {
   try {
-    const response = await axios.post("/api/v1/task", {
+    const response = await api.post("/api/v1/task", {
       description,
       model_used,
     });
-
     return response.data;
   } catch (err) {
     console.error("Error creating task:", err);

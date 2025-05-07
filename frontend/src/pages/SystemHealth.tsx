@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api, { unwrapApiResponse } from "@/lib/services/api";
 
 interface HealthResponse {
   backend: string;
@@ -14,10 +14,11 @@ const SystemHealth: React.FC = () => {
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const res = await axios.get<HealthResponse>("/api/v1/health");
-      setHealth(res.data);
+      const res = await api.get("/api/v1/health");
+      const data = unwrapApiResponse<HealthResponse>(res);
+      setHealth(data);
       setError(null);
-    } catch (err: unknown) {
+    } catch (err) {
       console.error("Health fetch error:", err);
       setError("Failed to fetch system health.");
       setHealth(null);
@@ -28,8 +29,8 @@ const SystemHealth: React.FC = () => {
 
   useEffect(() => {
     fetchHealth();
-    const interval = setInterval(fetchHealth, 10000); // auto-refresh every 10s
-    return () => clearInterval(interval);
+  //   const interval = setInterval(fetchHealth, 10000);
+  //   return () => clearInterval(interval);
   }, []);
 
   return (
@@ -47,8 +48,32 @@ const SystemHealth: React.FC = () => {
 
       {health && (
         <div className="space-y-4 bg-gray-100 p-4 rounded shadow-sm border">
-          <HealthItem label="Backend" status={health.backend} />
-          <HealthItem label="Model" status={health.model} />
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Backend:</span>
+            <span
+              data-testid="backend-status"
+              className={`font-semibold ${
+                health.backend.trim().toLowerCase() === "ok"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {health.backend}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Model:</span>
+            <span
+              data-testid="model-status"
+              className={`font-semibold ${
+                health.model.trim().toLowerCase() === "ok"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {health.model}
+            </span>
+          </div>
         </div>
       )}
 
@@ -58,22 +83,6 @@ const SystemHealth: React.FC = () => {
       >
         🔄 Refresh
       </button>
-    </div>
-  );
-};
-
-const HealthItem: React.FC<{ label: string; status: string }> = ({
-  label,
-  status,
-}) => {
-  const normalized = status.trim().toLowerCase();
-  const colorClass =
-    normalized === "ok" ? "text-green-600" : "text-red-600";
-
-  return (
-    <div className="flex justify-between items-center">
-      <span className="font-medium">{label}:</span>
-      <span className={`font-semibold ${colorClass}`}>{status}</span>
     </div>
   );
 };

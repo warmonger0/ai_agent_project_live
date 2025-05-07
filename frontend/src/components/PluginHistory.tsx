@@ -116,6 +116,7 @@ export default function PluginHistory() {
                       <span>{JSON.stringify(entry.input_data)}</span>
                       <Button
                         onClick={() => handleCopy(entry.input_data)}
+                        data-testid={`copy-input-${entry.id}`}
                         size="icon"
                         variant="ghost"
                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"
@@ -129,6 +130,7 @@ export default function PluginHistory() {
                       <span>{JSON.stringify(entry.output_data)}</span>
                       <Button
                         onClick={() => handleCopy(entry.output_data)}
+                        data-testid={`copy-output-${entry.id}`}
                         size="icon"
                         variant="ghost"
                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs"

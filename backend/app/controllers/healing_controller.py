@@ -5,7 +5,7 @@ router = APIRouter()
 
 LOG_PATH = "healing.log"
 
-@router.get("/healing/status")
+@router.get("/status")
 def get_healing_status():
     if not os.path.exists(LOG_PATH):
         raise HTTPException(status_code=404, detail="Healing log not found")

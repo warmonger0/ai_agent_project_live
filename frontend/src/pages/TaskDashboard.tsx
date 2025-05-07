@@ -11,9 +11,7 @@ export default function TaskDashboard() {
         </h1>
 
         <TaskTable />
-
         <PluginPanel />
-
         <PluginHistory />
       </div>
     </div>

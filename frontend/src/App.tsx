@@ -7,9 +7,11 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import "./index.css";
 import TaskDashboard from "./pages/TaskDashboard";
 import SystemHealth from "./pages/SystemHealth";
 import DeploymentLogs from "./pages/DeploymentLogs";
+import CommandPanel from "./pages/CommandPanel";
 
 import { Toaster } from "sonner";
 
@@ -18,26 +20,36 @@ const App: React.FC = () => {
     <Router>
       <div className="min-h-screen bg-gray-100">
         {/* ✅ Navigation */}
-        <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
-          <div className="max-w-6xl mx-auto flex flex-wrap gap-4 sm:gap-6">
-            <Link
-              to="/tasks"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              Tasks
-            </Link>
-            <Link
-              to="/health"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              System Health
-            </Link>
-            <Link
-              to="/deployments"
-              className="text-indigo-600 font-medium hover:text-indigo-800 transition"
-            >
-              Deployment Logs
-            </Link>
+        <nav className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              <div className="flex space-x-4">
+                <Link
+                  to="/command"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Command Panel
+                </Link>
+                <Link
+                  to="/tasks"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Tasks
+                </Link>
+                <Link
+                  to="/health"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  System Health
+                </Link>
+                <Link
+                  to="/deployments"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Deployment Logs
+                </Link>
+              </div>
+            </div>
           </div>
         </nav>
 
@@ -48,6 +60,7 @@ const App: React.FC = () => {
             <Route path="/tasks" element={<TaskDashboard />} />
             <Route path="/health" element={<SystemHealth />} />
             <Route path="/deployments" element={<DeploymentLogs />} />
+            <Route path="/command" element={<CommandPanel />} /> {/* ✅ NEW */}
           </Routes>
         </main>
 

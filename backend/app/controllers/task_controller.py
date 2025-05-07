@@ -1,14 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db.session import get_db  # ✅ from db/session.py
-from app.db import tasks as task_db  # ✅ from db/tasks.py
-from app.db.tasks import add_memory_entry  # ✅ Chat 11 memory ledger hook
-from app.models import Task, PluginExecution
+from backend.app.db.session import get_db
+from backend.app.db import tasks as task_db
+from backend.app.db.tasks import add_memory_entry
+from backend.app.models import Task, PluginExecution
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional  # noqa: ANN401
-import json
+from typing import Any, Dict, List, Optional
 
-router = APIRouter()
+router = APIRouter(prefix="/tasks")  # ✅ Added prefix
 
 # --- Pydantic input model for new task creation ---
 class TaskCreate(BaseModel):
@@ -17,7 +16,7 @@ class TaskCreate(BaseModel):
 
 # --- TASK ROUTES ---
 
-@router.post("/tasks", response_model=dict)
+@router.post("/", response_model=dict)  # ✅ non-empty path
 def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     task = task_db.create_task(db, description=task_data.description, model_used=task_data.model_used)
     add_memory_entry(db, "task", task.id, f"Created task with model `{task.model_used}` and description: {task.description}")
@@ -27,7 +26,7 @@ def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
         "created_at": task.created_at
     }
 
-@router.get("/tasks", response_model=List[dict])
+@router.get("/", response_model=List[dict])
 def get_all_tasks(db: Session = Depends(get_db)):
     tasks = task_db.get_all_tasks(db)
     return [
@@ -42,7 +41,7 @@ def get_all_tasks(db: Session = Depends(get_db)):
         for t in tasks
     ]
 
-@router.get("/tasks/{task_id}", response_model=dict)
+@router.get("/{task_id}", response_model=dict)
 def get_task(task_id: int, db: Session = Depends(get_db)):
     task = task_db.get_task(db, task_id)
     if not task:
@@ -56,7 +55,7 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
         "completed_at": task.completed_at,
     }
 
-@router.patch("/tasks/{task_id}", response_model=dict)
+@router.patch("/{task_id}", response_model=dict)
 def update_task(task_id: int, status: str, error_message: Optional[str] = None, db: Session = Depends(get_db)):
     task = task_db.update_task_status(
         db, task_id, status=status,
@@ -102,13 +101,3 @@ def get_plugin_execution_history(plugin_name: Optional[str] = None, db: Session 
         }
         for e in executions
     ]
-
-# --- Status List for UI Dropdown ---
-@router.get("/tasks/status/all", response_model=List[str])
-def get_all_statuses():
-    return ["pending", "running", "success", "error"]
-
-# --- Alias to match frontend call ---
-@router.get("/status/all", response_model=List[str])
-def get_status_alias():
-    return get_all_statuses()

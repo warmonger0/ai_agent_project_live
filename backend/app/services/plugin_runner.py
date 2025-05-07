@@ -1,45 +1,34 @@
 # backend/app/services/plugin_runner.py
 
-from app.plugins.loader import run_plugin
-from app.db.session import SessionLocal
-from app.models import PluginExecution
-import logging
-
-logger = logging.getLogger(__name__)
+from backend.app.plugins.loader import run_plugin
+from backend.app.services.execution_tracker import store_execution_result
 
 def run_plugin_job(plugin_name: str, input_text: str, source: str = "manual"):
-    db = SessionLocal()
     try:
         output = run_plugin(plugin_name, input_text)
 
-        # ✅ Always ensure output is JSON-serializable
+        # ✅ Normalize to dict
         result = {"result": output} if not isinstance(output, dict) else output
 
-        execution = PluginExecution(
+        store_execution_result(
             plugin_name=plugin_name,
-            input_data={"input_text": input_text, "source": source},
+            input_text=input_text,
             output_data=result,
-            status="success"
+            status="success",
+            source=source
         )
-        db.add(execution)
-        db.commit()
 
-        logger.info(f"✅ Plugin '{plugin_name}' ran successfully [{source}]")
         return result
 
     except Exception as e:
-        logger.exception(f"❌ Plugin '{plugin_name}' failed [{source}]")
-
         error = {"error": str(e)}
-        execution = PluginExecution(
-            plugin_name=plugin_name,
-            input_data={"input_text": input_text, "source": source},
-            output_data=error,
-            status="error"
-        )
-        db.add(execution)
-        db.commit()
-        return error
 
-    finally:
-        db.close()
+        store_execution_result(
+            plugin_name=plugin_name,
+            input_text=input_text,
+            output_data=error,
+            status="error",
+            source=source
+        )
+
+        return error

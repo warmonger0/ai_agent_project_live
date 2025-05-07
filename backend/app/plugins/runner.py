@@ -9,7 +9,7 @@ BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if BACKEND_ROOT not in sys.path:
     sys.path.insert(0, BACKEND_ROOT)
 
-from app.services.plugin_runner import run_plugin_job  # Absolute import
+from backend.app.services.plugin_runner import run_plugin_job  # Absolute import
 
 # ✅ Stream logs to STDERR only, to preserve STDOUT for subprocess JSON
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)

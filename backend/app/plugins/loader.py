@@ -35,6 +35,9 @@ def discover_plugins() -> List[Dict[str, Any]]:
             print(f"⚠️ Skipping plugin '{name}' due to import error: {e}")
             continue
 
+        found = False
+
+        # --- 🧩 Class-based plugin detection ---
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if inspect.isclass(attr) and hasattr(attr, 'run') and callable(attr.run):
@@ -44,6 +47,19 @@ def discover_plugins() -> List[Dict[str, Any]]:
                     "module": name,
                     "class": attr.__name__,
                 })
+                found = True
+                break  # ✅ stop after first valid class
+
+        # --- 🔧 Function-based plugin detection ---
+        if not found and all(hasattr(module, fn) for fn in ("name", "description", "spec", "run")):
+            if all(callable(getattr(module, fn)) for fn in ("name", "description", "spec", "run")):
+                plugins.append({
+                    "name": module.name(),
+                    "description": module.description(),
+                    "module": name,
+                    "class": None,
+                })
+
     return plugins
 
 def load_plugin_class(plugin_name: str) -> Type:
@@ -63,25 +79,30 @@ def load_plugin_class(plugin_name: str) -> Type:
     print(f"📦 Attributes in {plugin_name}.py:")
     pprint.pprint(dir(module))
 
+    # Try class-based loader
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
         if inspect.isclass(attr) and hasattr(attr, "run") and callable(attr.run):
             print(f"✅ Found plugin class: {attr.__name__}")
             return attr
 
-    raise ImportError(f"No valid plugin class with 'run()' method found in '{filename}'.")
+    # Try function-based fallback
+    if all(hasattr(module, fn) for fn in ("run", "name")):
+        print(f"✅ Found function-style plugin: {plugin_name}")
+        return module  # returning module directly to be used
 
+    raise ImportError(f"No valid plugin class or run() function found in '{filename}'.")
+
+# No changes to run_plugin(), which runs plugin scripts as subprocesses.
 def run_plugin(plugin_name: str, input_text: str, plugin_dir: str = None) -> Dict[str, Any]:
-    if plugin_dir is None:
-        plugin_dir = PLUGIN_DIR
-
+    plugin_dir = plugin_dir or PLUGIN_DIR
     plugin_path = os.path.join(plugin_dir, f"{plugin_name}.py")
+
     if not os.path.isfile(plugin_path):
         return {"ok": False, "error": f"Plugin '{plugin_name}' not found."}
 
-    # ✅ Isolate execution and ensure `PYTHONPATH` includes backend
     env = os.environ.copy()
-    env["PYTHONPATH"] = PROJECT_ROOT  # clean and direct
+    env["PYTHONPATH"] = PROJECT_ROOT
 
     try:
         result = subprocess.run(

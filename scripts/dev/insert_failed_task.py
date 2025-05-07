@@ -1,27 +1,12 @@
-# ⚠️ DEV-ONLY SCRIPT
-# Purpose: Manually insert a failed task for testing healing logic.
-# Do not include in production deployments or automated pipelines.
+# scripts/dev/insert_failed_task.py
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app.models import Task
-from app.db import SessionLocal
 
-def insert_failed_task():
-    db = SessionLocal()
+# Allow importing from backend/app
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend", "app")))
 
-    task = Task(
-        description="Simulated failure task for healing test",
-        model_used="DeepSeek",
-        generated_code=None,
-        status="failed"
-    )
-
-    db.add(task)
-    db.commit()
-    print(f"✅ Inserted failed task with ID {task.id}")
-    db.close()
+from app.utils.devtools import insert_dummy_task
 
 if __name__ == "__main__":
-    insert_failed_task()
+    insert_dummy_task()

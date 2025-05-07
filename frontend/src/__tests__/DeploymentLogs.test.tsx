@@ -1,12 +1,11 @@
 /// <reference types="vitest" />
 import { vi } from "vitest";
-
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import axios from "axios";
 import DeploymentLogs from "../../src/pages/DeploymentLogs";
 
-// ✅ Replace Jest with Vitest mocks
+// ✅ Mock axios
 vi.mock("axios");
 const mockedAxios = axios as unknown as {
   get: ReturnType<typeof vi.fn>;
@@ -18,28 +17,29 @@ describe("DeploymentLogs", () => {
 
   beforeEach(() => {
     mockedAxios.get = vi.fn().mockImplementation((url) => {
-      if (url === "/logs") {
-        return Promise.resolve({ data: mockLogList });
+      if (url === "/api/v1/logs" || url === "/api/v1/logs/") {
+        return Promise.resolve({ data: { ok: true, data: mockLogList } });
       }
-      if (url === "/logs/test.log") {
+      if (url === "/api/v1/logs/test.log") {
+        // ✅ Return plain text, since the component expects a string
         return Promise.resolve({ data: mockLogContent });
       }
-      return Promise.reject(new Error("Unexpected URL"));
+      return Promise.reject(new Error("Unexpected URL: " + url));
     });
   });
 
   it("renders logs and shows content when clicked", async () => {
     render(<DeploymentLogs />);
 
-    // Wait for log list
+    // Confirm log list renders
     await waitFor(() => {
       expect(screen.getByText("test.log")).toBeInTheDocument();
     });
 
-    // Click on a log file
+    // Trigger loading of the log content
     fireEvent.click(screen.getByText("test.log"));
 
-    // Wait for its content to appear
+    // Confirm log content loads
     await waitFor(() =>
       expect(screen.getByText(/Deployment complete/i)).toBeInTheDocument()
     );

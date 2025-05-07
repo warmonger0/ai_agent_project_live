@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 import traceback
 import logging
 
-from app.core.api_response import error_response  # ✅ centralized shape
+from backend.app.core.api_response import error_response
 
 logger = logging.getLogger(__name__)
 

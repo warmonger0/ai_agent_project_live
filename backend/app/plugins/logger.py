@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from app.db.session import SessionLocal
-from app.models import PluginExecution
+from backend.app.db.session import SessionLocal
+from backend.app.models import PluginExecution
 
 
 def store_plugin_execution(plugin_name: str, input_data: dict, output_data: dict, status: str) -> None:

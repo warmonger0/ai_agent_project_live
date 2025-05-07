@@ -1,26 +1,24 @@
-import axios from "axios";
+import api, { unwrapApiResponse } from "@/lib/services/api";
 
 describe("Log Viewer API", () => {
-  const BASE = "http://localhost:8000";
-
   it("should return a list of log files", async () => {
-    const res = await axios.get(`${BASE}/logs`);
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.data)).toBe(true);
-    expect(res.data.some((name) => name.endsWith(".log"))).toBe(true);
+    const res = await api.get("/api/v1/logs");
+    const files = unwrapApiResponse<string[]>(res.data); // ✅ fix: use res.data
+    expect(Array.isArray(files)).toBe(true);
+    expect(files.some(name => name.endsWith(".log"))).toBe(true);
   });
 
   it("should return contents of a real log file", async () => {
-    const { data: logs } = await axios.get(`${BASE}/logs`);
-    const testLog = logs.find(
-      (name: string) => name.includes("test") || name.includes("deployment"),
-    );
-    expect(testLog).toBeDefined();
+    const res = await api.get("/api/v1/logs");
+    const files = unwrapApiResponse<string[]>(res.data); // ✅ fix: correct response handling
 
-    const content = await axios.get(`${BASE}/logs/${testLog}`, {
-      responseType: "text",
-    });
-    expect(typeof content.data).toBe("string");
-    expect(content.data.length).toBeGreaterThan(0);
+    const logFile = files.find(
+      (name: string) => name.includes("healing") || name.includes("test")
+    );
+    expect(logFile).toBeDefined();
+
+    const contentRes = await api.get(`/api/v1/logs/${logFile}`); // ✅ fix: correct route
+    expect(typeof contentRes.data).toBe("string");
+    expect(contentRes.data.length).toBeGreaterThan(0);
   });
 });

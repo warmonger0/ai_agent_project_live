@@ -4,7 +4,7 @@ import Table from "./table/Table";
 import TaskRow from "./table/TaskRow";
 
 interface Task {
-  task_id: number;
+  id: number;
   description: string;
   status: string;
 }
@@ -17,12 +17,12 @@ const TaskTable = () => {
     const loadTasks = async () => {
       try {
         const res = await fetchTasks();
-        const safeData = Array.isArray(res?.data) ? res.data : []; // 👈 handles { ok: true, data: [...] } or junk
-        console.log("✅ Loaded tasks:", safeData);
-        setTasks(safeData);
+        const taskArray = Array.isArray(res?.data) ? res.data : [];
+        console.log("✅ Loaded tasks:", taskArray);
+        setTasks(taskArray);
       } catch (error) {
         console.error("❌ Error loading tasks:", error);
-        setTasks([]); // fallback to empty array
+        setTasks([]);
       } finally {
         setLoading(false);
       }
@@ -41,8 +41,13 @@ const TaskTable = () => {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6 text-center">Task Dashboard</h1>
       <Table headers={["ID", "Description", "Status"]}>
-        {(tasks || []).map((task) => (
-          <TaskRow key={task.task_id} {...task} />
+        {tasks.map((task) => (
+          <TaskRow
+            key={task.id}
+            task_id={task.id}
+            description={task.description}
+            status={task.status}
+          />
         ))}
       </Table>
     </div>

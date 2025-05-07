@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import Task, PluginExecution, MemoryLedger
+from backend.app.models import Task, PluginExecution, MemoryLedger
 from datetime import datetime
 from typing import Optional
 
