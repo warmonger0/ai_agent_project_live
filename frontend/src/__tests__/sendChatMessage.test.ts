@@ -24,18 +24,15 @@ it("should throw if VITE_API_BASE_URL is undefined", async () => {
     messages: [{ role: "user", content: "Missing env" }],
   };
 
-  // Directly simulate undefined config by passing nothing and mocking env var
-  const original = import.meta.env.VITE_API_BASE_URL;
-  // @ts-expect-error
-  import.meta.env.VITE_API_BASE_URL = undefined;
+  // Simulate undefined config — and stub fetch to prove it's not called
+  const spy = vi.spyOn(global, "fetch");
 
-  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
+  await expect(sendChatMessage(mockRequest, undefined)).rejects.toThrow(
     "VITE_API_BASE_URL is not defined"
   );
 
-  // Restore original
-  // @ts-expect-error
-  import.meta.env.VITE_API_BASE_URL = original;
+  // Ensure fetch was NOT called
+  expect(spy).not.toHaveBeenCalled();
 });
 
 it("should throw if response is not valid JSON", async () => {
