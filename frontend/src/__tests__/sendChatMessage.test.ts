@@ -24,11 +24,18 @@ it("should throw if VITE_API_BASE_URL is undefined", async () => {
     messages: [{ role: "user", content: "Missing env" }],
   };
 
-  const originalBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  // Remove env var forcefully
+  const original = import.meta.env.VITE_API_BASE_URL;
+  // @ts-expect-error
+  delete import.meta.env.VITE_API_BASE_URL;
 
-  await expect(sendChatMessage(mockRequest, undefined)).rejects.toThrow(
+  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
     "VITE_API_BASE_URL is not defined"
   );
+
+  // Restore
+  // @ts-expect-error
+  import.meta.env.VITE_API_BASE_URL = original;
 });
 
 it("should throw if response is not valid JSON", async () => {
