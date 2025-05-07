@@ -26,7 +26,7 @@ describe("ChatPanel Component", () => {
   it("renders the input field and send button", () => {
     render(<ChatPanel />);
     expect(
-      screen.getByPlaceholderText("Type your message...")
+      screen.getByPlaceholderText("Ask the agent something...")
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /send/i })).toBeInTheDocument();
   });
