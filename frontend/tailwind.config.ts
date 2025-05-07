@@ -43,7 +43,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tw-animate-css")],
 };
 
 export default config;
