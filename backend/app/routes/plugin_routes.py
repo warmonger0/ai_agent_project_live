@@ -11,9 +11,13 @@ from backend.app.routes import plugin_execute
 from backend.app.routes.health import router as health_router
 from backend.app.routes.logs import router as logs_router
 
+#command panel
+from app.api.v1.planning import chat as planning_chat
+
 router = APIRouter()
 
 # Core plugin functionality
+
 router.include_router(list_router, prefix="/plugins", tags=["plugins"])
 router.include_router(spec_router, prefix="/plugins", tags=["plugins"])
 router.include_router(exec_router, prefix="/plugins", tags=["plugins"])
