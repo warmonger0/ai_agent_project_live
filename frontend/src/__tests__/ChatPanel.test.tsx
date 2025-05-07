@@ -35,7 +35,7 @@ describe("ChatPanel Component", () => {
     (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
-    const input = sscreen.getByPlaceholderText("Ask the agent something...");
+    const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
     fireEvent.change(input, { target: { value: "Hello" } });
@@ -52,7 +52,7 @@ describe("ChatPanel Component", () => {
     (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
-    const input = screen.getByPlaceholderText("Type your message...");
+    const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
     fireEvent.change(input, { target: { value: "Hello" } });
