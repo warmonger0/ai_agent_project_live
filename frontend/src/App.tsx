@@ -20,21 +20,35 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-gray-100">
         {/* ✅ Navigation */}
         <nav className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-6xl mx-auto flex flex-wrap items-center gap-4 px-4 py-3">
-            {[
-              { to: "/tasks", label: "Tasks" },
-              { to: "/health", label: "System Health" },
-              { to: "/deployments", label: "Deployment Logs" },
-              { to: "/command", label: "Command Panel" },
-            ].map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className="px-4 py-2 text-sm font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 transition"
-              >
-                {label}
-              </Link>
-            ))}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              <div className="flex space-x-4">
+                <Link
+                  to="/command"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Command Panel
+                </Link>
+                <Link
+                  to="/tasks"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Tasks
+                </Link>
+                <Link
+                  to="/health"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  System Health
+                </Link>
+                <Link
+                  to="/deployments"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Deployment Logs
+                </Link>
+              </div>
+            </div>
           </div>
         </nav>
 
