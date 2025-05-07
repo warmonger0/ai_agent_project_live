@@ -16,16 +16,14 @@ vi.mock("../lib/sendChatMessage");
 
 describe("ChatPanel Component", () => {
   beforeEach(() => {
-    // Reset all mocks before each test
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    // Clean up DOM after each test
     cleanup();
   });
 
-  it("renders the input field and send button", () => {
+  it("renders the chat input field", () => {
     render(<ChatPanel />);
     expect(
       screen.getByPlaceholderText("Ask the agent something...")
@@ -41,7 +39,6 @@ describe("ChatPanel Component", () => {
     (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
-
     const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
@@ -59,7 +56,6 @@ describe("ChatPanel Component", () => {
     (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
-
     const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
