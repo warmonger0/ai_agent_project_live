@@ -20,23 +20,29 @@ it("should throw an error if the response is not ok", async () => {
 });
 
 it("should throw if VITE_API_BASE_URL is undefined", async () => {
-  const mockRequest: ChatRequest = {
-    messages: [{ role: "user", content: "Missing env" }],
-  };
-
-  // Remove env var forcefully
-  const original = import.meta.env.VITE_API_BASE_URL;
-  // @ts-expect-error
-  delete import.meta.env.VITE_API_BASE_URL;
-
-  await expect(sendChatMessage(mockRequest)).rejects.toThrow(
-    "VITE_API_BASE_URL is not defined"
-  );
-
-  // Restore
-  // @ts-expect-error
-  import.meta.env.VITE_API_BASE_URL = original;
-});
+    const mockRequest: ChatRequest = {
+      messages: [{ role: "user", content: "Missing env" }],
+    };
+  
+    // Stub import.meta.env to not exist
+    const originalEnv = import.meta.env;
+    Object.defineProperty(import, "meta", {
+      value: { env: {} },
+      configurable: true,
+    });
+  
+    // Don't pass override → triggers fallback to undefined env
+    await expect(sendChatMessage(mockRequest)).rejects.toThrow(
+      "VITE_API_BASE_URL is not defined"
+    );
+  
+    // Restore the original environment
+    Object.defineProperty(import, "meta", {
+      value: originalEnv,
+      configurable: true,
+    });
+  });
+  
 
 it("should throw if response is not valid JSON", async () => {
   global.fetch = vi.fn(() =>
