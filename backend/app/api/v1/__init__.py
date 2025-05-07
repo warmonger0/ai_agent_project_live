@@ -1,3 +1,4 @@
+from backend.app.api.v1.planning import chat
 from fastapi import APIRouter
 
 from backend.app.controllers import (
