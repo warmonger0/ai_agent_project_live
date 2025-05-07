@@ -5,16 +5,12 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface ChatCompletionChoice {
-  message: ChatMessage;
+export interface ChatRequest {
+  messages: ChatMessage[];
 }
 
 export interface ChatResponse {
-  choices: ChatCompletionChoice[];
-}
-
-export interface ChatRequest {
-  messages: ChatMessage[];
+  choices: { message: ChatMessage }[];
 }
 
 export async function sendChatMessage(
@@ -33,6 +29,5 @@ export async function sendChatMessage(
     throw new Error(`Chat request failed: ${response.status} - ${error}`);
   }
 
-  const data = (await response.json()) as ChatResponse;
-  return data;
+  return await response.json();
 }
