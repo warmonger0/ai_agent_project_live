@@ -1,18 +1,37 @@
-const phases = ["Phase 1", "Phase 2", "Phase 3", "Phase 4"];
+import React from "react";
 
-export default function PhaseSidebar() {
+const phases = [
+  "Phase 1: Command Panel",
+  "Phase 2: Agent Delegation",
+  "Phase 3: Dependency Setup",
+  "Phase 4: Implementation",
+];
+
+// TODO: replace this with dynamic phase from app state
+const currentPhase = 0;
+
+const PhaseSidebar: React.FC = () => {
   return (
-    <div className="flex flex-col items-center space-y-4">
-      {phases.map((phase, index) => (
-        <div
-          key={index}
-          className={`w-10 h-10 flex items-center justify-center rounded-full ${
-            index === 0 ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          {index + 1}
-        </div>
-      ))}
+    <div className="w-full">
+      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        Phases
+      </h2>
+      <ul className="space-y-2">
+        {phases.map((label, idx) => (
+          <li
+            key={label}
+            className={`px-3 py-2 rounded-md transition ${
+              idx === currentPhase
+                ? "bg-blue-600 text-white font-semibold"
+                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+            }`}
+          >
+            {label}
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
+};
+
+export default PhaseSidebar;

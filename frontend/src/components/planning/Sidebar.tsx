@@ -1,15 +1,19 @@
-import React from 'react';
+import React from "react";
+import PhaseSidebar from "./PhaseSidebar";
 
 const Sidebar: React.FC = () => {
   return (
-    <div className="w-64 bg-gray-800 text-white p-4">
-      <h2 className="text-xl font-bold mb-4">Phases</h2>
-      <ul>
-        <li className="mb-2">Phase 1: Command Panel</li>
-        <li className="mb-2">Phase 2: Agent Delegation</li>
-        <li className="mb-2">Phase 3: Dependency Setup</li>
-        <li className="mb-2">Phase 4: Implementation</li>
-      </ul>
+    <div className="h-full w-full flex flex-col">
+      {/* Top 1/3 Phase indicator */}
+      <div className="flex-none border-b border-gray-300 p-4">
+        <PhaseSidebar />
+      </div>
+
+      {/* Remaining space for future sidebar tools/info */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        {/* Add more sidebar content here later */}
+        <p className="text-sm text-gray-500 italic">Sidebar tools coming soon...</p>
+      </div>
     </div>
   );
 };

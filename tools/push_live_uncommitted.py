@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 import os
 
-project_path = "/home/war/ai_agent_project"
+project_path = Path(__file__).resolve().parent.parent
 syncignore_path = project_path / ".syncignore"
 os.chdir(project_path)
 
