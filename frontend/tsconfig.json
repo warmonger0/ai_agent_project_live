@@ -13,9 +13,9 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "types": [
-  "vitest/globals",
-  "vite/client"
-]
+      "vitest/globals",
+      "vite/client"
+    ]
 
   },
   "include": ["src", "tests", "src/__tests__"]
