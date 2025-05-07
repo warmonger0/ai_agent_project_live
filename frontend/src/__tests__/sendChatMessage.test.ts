@@ -9,7 +9,7 @@ describe("sendChatMessage", () => {
     // Set up the environment variable
     import.meta.env = {
       ...originalEnv,
-      VITE_API_BASE_URL: "http://localhost:8000",
+      VITE_API_BASE_URL: "http://192.168.50.142:8000",
     };
 
     // Mock the fetch function
