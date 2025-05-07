@@ -21,11 +21,22 @@ const ChatPanel: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await sendChatMessage(input);
+      const chatRequest = { messages: [userMessage] };
+      const response = await sendChatMessage(chatRequest);
+
+      const replyContent =
+        typeof response === "string"
+          ? response
+          : Array.isArray(response?.choices) &&
+            response.choices[0]?.message?.content
+          ? response.choices[0].message.content
+          : "No response.";
+
       const assistantMessage: ChatMessage = {
         role: "assistant",
-        content: response || "No response.",
+        content: replyContent,
       };
+
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       console.error("Failed to send message:", err);
