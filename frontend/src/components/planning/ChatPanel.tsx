@@ -16,14 +16,14 @@ const ChatPanel: React.FC = () => {
     if (!input.trim()) return;
 
     const userMessage: ChatMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+
+    setMessages(newMessages);
     setInput("");
     setLoading(true);
 
     try {
-      const chatRequest = { messages: [...messages, userMessage] };
-
-      const response = await sendChatMessage(chatRequest);
+      const response = await sendChatMessage({ messages: newMessages });
 
       const replyContent =
         response.choices?.[0]?.message?.content || "No response.";
