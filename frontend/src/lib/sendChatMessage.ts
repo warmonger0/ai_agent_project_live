@@ -1,11 +1,20 @@
-// /src/lib/sendChatMessage.ts
+// /frontend/src/lib/sendChatMessage.ts
 
-export interface ChatRequest {
-  message: string;
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatCompletionChoice {
+  message: ChatMessage;
 }
 
 export interface ChatResponse {
-  response: string;
+  choices: ChatCompletionChoice[];
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[];
 }
 
 export async function sendChatMessage(
