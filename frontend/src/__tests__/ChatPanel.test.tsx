@@ -28,7 +28,7 @@ describe("ChatPanel Component", () => {
 
   it("sends a message and displays the response", async () => {
     // Mock the API response
-    (sendChatMessage as jest.Mock).mockResolvedValueOnce(mockResponse);
+    (sendChatMessage as vi.Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
 
