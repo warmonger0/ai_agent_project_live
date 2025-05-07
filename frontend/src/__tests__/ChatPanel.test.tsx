@@ -1,8 +1,13 @@
 // File: /frontend/src/__tests__/ChatPanel.test.tsx
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { Mock } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
 import ChatPanel from "../components/planning/ChatPanel";
 import { sendChatMessage } from "../lib/sendChatMessage";
 
@@ -10,17 +15,14 @@ import { sendChatMessage } from "../lib/sendChatMessage";
 vi.mock("../lib/sendChatMessage");
 
 describe("ChatPanel Component", () => {
-  const mockResponse = {
-    choices: [{ message: { role: "assistant", content: "Hello from AI" } }],
-  };
-
   beforeEach(() => {
+    // Reset all mocks before each test
     vi.clearAllMocks();
   });
 
-  // ✅ Add best-practice mock restore here
   afterEach(() => {
-    vi.resetAllMocks(); // Ensures mock history/state is wiped clean
+    // Clean up DOM after each test
+    cleanup();
   });
 
   it("renders the input field and send button", () => {
@@ -32,9 +34,14 @@ describe("ChatPanel Component", () => {
   });
 
   it("sends a message and displays the response", async () => {
+    const mockResponse = {
+      choices: [{ message: { role: "assistant", content: "Hello from AI" } }],
+    };
+
     (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
 
     render(<ChatPanel />);
+
     const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
@@ -52,6 +59,7 @@ describe("ChatPanel Component", () => {
     (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
+
     const input = screen.getByPlaceholderText("Ask the agent something...");
     const sendButton = screen.getByRole("button", { name: /send/i });
 
