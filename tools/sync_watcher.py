@@ -24,7 +24,7 @@ def is_ignored(path: Path) -> bool:
     try:
         rel_path = str(path.relative_to(SRC))
     except ValueError:
-        return True  # Outside of project folder
+        return True  # Outside project folder
     return ignore_spec.match_file(rel_path)
 
 def log(msg):
@@ -36,7 +36,7 @@ def log(msg):
 def trigger_push(changed_file: Path):
     """Trigger the push script only for relevant changes."""
     result = subprocess.run(
-        ["python3", str(PUSH_SCRIPT), str(changed_file)],
+        ["python3", str(PUSH_SCRIPT)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -46,6 +46,10 @@ def trigger_push(changed_file: Path):
     if result.stderr.strip():
         log("❌ Error during push:")
         log(result.stderr.strip())
+
+def log_and_skip(path: Path):
+    """Log that the detected change was skipped."""
+    log(f"⚠️ Skipping push for ignored or redundant file: {path}")
 
 class PushHandler(FileSystemEventHandler):
     last_trigger = 0
@@ -60,6 +64,7 @@ class PushHandler(FileSystemEventHandler):
             log("⚠️ Sync disabled. Skipping push.")
             return
         if is_ignored(path):
+            log_and_skip(path)
             return
         if now - self.last_trigger < self.debounce_interval:
             return

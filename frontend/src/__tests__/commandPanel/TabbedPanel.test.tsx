@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import TabbedPanel from '../../components/commandPanel/TabbedPanel';
+import TabbedPanel from '../../components/planning/TabbedPanel';
 
 describe('TabbedPanel', () => {
-  it('renders tab buttons', () => {
+  it('renders tab buttons only (no duplicate text match)', () => {
     render(<TabbedPanel />);
-    expect(screen.getByText(/Understanding/i)).toBeInTheDocument();
-    expect(screen.getByText(/File Tree/i)).toBeInTheDocument();
-    expect(screen.getByText(/Issues/i)).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map(btn => btn.textContent)).toEqual(
+      expect.arrayContaining(['Understanding', 'File Tree', 'Issues'])
+    );
   });
 });

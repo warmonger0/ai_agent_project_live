@@ -24,10 +24,15 @@ node_modules/
 dist/
 .postcssrc
 tailwind.config.js
+package-lock.json
+yarn.lock
 
 # Testing
 .pytest_cache/
 tests/**/__pycache__/
+**/__tests__/
+**/*.test.tsx
+**/*.test.js
 
 # Editor & system junk
 .vscode/

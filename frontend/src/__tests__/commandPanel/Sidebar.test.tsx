@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import Sidebar from '../../components/commandPanel/Sidebar';
+import Sidebar from '../../components/planning/Sidebar';
 
 describe('Sidebar', () => {
   it('displays all phases', () => {

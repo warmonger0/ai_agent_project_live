@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import ChatPanel from '../../components/commandPanel/ChatPanel';
+import ChatPanel from '../../components/planning/ChatPanel';
 
 describe('ChatPanel', () => {
   it('renders chat panel title', () => {

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import IssuesTab from '../../components/commandPanel/IssuesTab';
+import IssuesTab from '../../components/planning/IssuesTab';
 
 describe('IssuesTab', () => {
   it('renders issues placeholder', () => {

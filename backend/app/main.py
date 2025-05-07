@@ -10,6 +10,7 @@ from backend.app.models import Task
 from backend.app.services.healing_loop import healing_loop
 
 from backend.app.api.v1 import api_router
+from backend.app.controllers import logs_controller  # ✅ Add this import
 
 import asyncio
 
@@ -34,8 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Unified API route prefix
+# ✅ API route prefixes
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(logs_controller.router)  # ✅ Mount /logs route
 
 # Root route
 @app.get("/")

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import os
 import subprocess
 import tempfile
 from pathlib import Path
+import os
 
 project_path = "/home/war/ai_agent_project"
-syncignore_path = os.path.join(project_path, ".syncignore")
+syncignore_path = project_path / ".syncignore"
 os.chdir(project_path)
 
 def run(cmd, silent=False, **kwargs):
@@ -17,18 +17,14 @@ def run(cmd, silent=False, **kwargs):
         print(f"▶️ {' '.join(cmd)}")
         subprocess.run(cmd, check=True, **kwargs)
 
-def has_meaningful_changes(temp_dir):
-    """Detect if there are any meaningful file changes (ignores excluded files)."""
-    diff = subprocess.run([
-        "rsync", "-ani", "--exclude-from", syncignore_path,
-        "--exclude", ".git/", "--no-specials", "--no-devices",
-        ".", f"{temp_dir}/"
-    ], capture_output=True, text=True)
-    # Only consider files that are not directories (i.e., real file changes)
-    return any(
-        line and not line.startswith(".d")
-        for line in diff.stdout.splitlines()
+def has_meaningful_changes():
+    """Detect if there are any meaningful file changes by using git status."""
+    result = subprocess.run(
+        ["git", "status", "--porcelain"], capture_output=True, text=True
     )
+    # We only care about modified or untracked files that are relevant to the push
+    changes = [line for line in result.stdout.splitlines() if line]
+    return changes
 
 # Ensure inside Git repo
 if not Path(".git").exists():
@@ -41,25 +37,38 @@ if branch != "temp-live":
     print("⚠️ Not on temp-live branch. Skipping push.")
     exit(0)
 
-with tempfile.TemporaryDirectory() as temp_dir:
-    if not has_meaningful_changes(temp_dir):
-        print("⚠️ No meaningful changes detected. Skipping push.")
-        exit(0)  # No tracked file change
+# Detect if there are any meaningful changes
+if not has_meaningful_changes():
+    print("⚠️ No meaningful changes detected. Skipping push.")
+    exit(0)
 
-    print("📌 Committing pending changes...")
-    run(["git", "add", "."], silent=True)
+# Stage changes if any
+print("📌 Staging changes...")
+run(["git", "add", "."], silent=True)
 
-    # Check if there are actually any staged changes
-    if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-        print("⚠️ No staged changes to commit. Skipping push and listening for new changes...")
-        exit(0)
+# Check if there are actually any staged changes
+if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
+    print("⚠️ No staged changes to commit. Skipping push and listening for new changes...")
+    exit(0)
 
-    # Commit changes
-    run(["git", "commit", "-m", "📌 Auto-commit snapshot (temp-live sync)"])
-    
-    print("🚀 Pushing updates to github-live:main")
-    run(["git", "push", "-f", "github-live", "temp-live:main"])
-    
+# Commit changes
+print("📌 Committing changes...")
+run(["git", "commit", "-m", "📌 Auto-commit snapshot (temp-live sync)"])
+
+# Push updates to GitHub
+print("🚀 Pushing updates to github-live:main...")
+result = subprocess.run(
+    ["git", "push", "-f", "github-live", "temp-live:main"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True
+)
+
+if result.returncode == 0:
     print("✅ Snapshot updated and pushed.")
     print("✅ Live snapshot pushed to GitHub.")
-    print("🔁 Push complete. Listening for new changes...")
+else:
+    print(f"❌ Error during push:\n{result.stderr}")
+    exit(1)
+
+print("🔁 Push complete. Listening for new changes...")
