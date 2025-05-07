@@ -1,5 +1,5 @@
-import { sendChatMessage } from "../../lib/sendChatMessage";
-import type { ChatRequest } from "../../lib/sendChatMessage";
+import { sendChatMessage } from "../lib/sendChatMessage";
+import type { ChatRequest } from "../lib/sendChatMessage";
 
 it("should throw an error if the response is not ok", async () => {
   global.fetch = vi.fn(() =>
