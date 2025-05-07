@@ -52,9 +52,7 @@ describe("ChatPanel Component", () => {
 
   it("displays an error message when the API call fails", async () => {
     // Mock the API to throw an error
-    (sendChatMessage as jest.Mock).mockRejectedValueOnce(
-      new Error("API Error")
-    );
+    (sendChatMessage as vi.Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<ChatPanel />);
 
