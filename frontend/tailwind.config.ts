@@ -12,9 +12,6 @@ const config: Config = {
         xl: "calc(var(--radius) + 4px)",
       },
       colors: {
-        // Retain default colors
-        ...colors,
-        // Add your custom colors under a separate key to avoid conflicts
         skin: {
           background: "var(--color-background)",
           foreground: "var(--color-foreground)",
@@ -47,7 +44,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;
