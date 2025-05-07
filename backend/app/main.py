@@ -14,11 +14,13 @@ from backend.app.controllers import logs_controller  # ✅ Add this import
 
 import asyncio
 import logging
+import sys
 
 # ✅ Configure Logging to display DEBUG or WARNING messages in console
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.DEBUG,  # Set to DEBUG to capture all logs
     format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 
 # ✅ FastAPI application setup
