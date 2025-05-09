@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import UnderstandingTab from "./UnderstandingTab";
-import FileTreeTab from "./FileTreeTab";
+import UnderstandingTab from "./TabbedInfoPanel/UnderstandingTab";
+import FileTreeTab from "./TabbedInfoPanel/FileTreeTab";
 import IssuesTab from "./ChatPanel/IssuesTab";
 
 const TabbedPanel: React.FC = () => {
