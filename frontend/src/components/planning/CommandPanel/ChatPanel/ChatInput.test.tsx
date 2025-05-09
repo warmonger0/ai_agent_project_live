@@ -1,8 +1,8 @@
-// File: /frontend/src/__tests__/commandPanel/ChatInput.test.tsx
+t; // File: /frontend/src/__tests__/commandPanel/ChatInput.test.tsx
 
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import ChatInput from "@/components/planning/ChatPanel/ChatInput";
+import ChatInput from "./ChatPanel/ChatInput";
 
 describe("ChatInput", () => {
   it("renders input and button", () => {
