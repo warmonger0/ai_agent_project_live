@@ -15,10 +15,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`p-3 rounded-md w-full whitespace-pre-wrap prose prose-sm max-w-prose ${
+        className={`relative p-3 rounded-md w-full whitespace-pre-wrap prose prose-sm max-w-none ${
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
+        {/* Copy + Edit buttons for assistant messages only */}
+        {!isUser && (
+          <div className="absolute top-2 right-3 text-sm text-gray-400 space-x-2">
+            <button
+              onClick={() => navigator.clipboard.writeText(message.content)}
+              className="hover:underline"
+            >
+              Copy
+            </button>
+            <button
+              onClick={() => console.log("Edit clicked")}
+              className="hover:underline"
+            >
+              Edit
+            </button>
+          </div>
+        )}
+
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
