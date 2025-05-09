@@ -1,5 +1,5 @@
 import React from "react";
-import ChatPanel from "@/components/planning/ChatPanel";
+import ChatPanel from "@/components/planning/CommandPanel/ChatPanel";
 import TabbedPanel from "@/components/planning/TabbedPanel";
 import PhaseSidebar from "@/components/planning/PhaseSidebar";
 
