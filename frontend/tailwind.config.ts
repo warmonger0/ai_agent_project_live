@@ -4,9 +4,7 @@ import typography from "@tailwindcss/typography";
 const config: Config = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   safelist: [
-    {
-      pattern: /hljs/,
-    },
+    { pattern: /hljs/ }, // Allow highlight.js styles
   ],
   theme: {
     extend: {
