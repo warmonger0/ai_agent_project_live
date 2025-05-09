@@ -12,8 +12,49 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === "user";
 
-  const handleEdit = () => {
-    console.log("📝 Edit clicked:", message.content);
+  const handleEdit = (code: string) => {
+    console.log("📝 Edit clicked:", code);
+  };
+
+  // Custom renderer for inline and block code
+  const components = {
+    code({
+      inline,
+      children,
+    }: {
+      inline?: boolean;
+      children: string | string[];
+    }) {
+      const codeContent = Array.isArray(children)
+        ? children.join("")
+        : children;
+
+      if (inline) {
+        return <code className="bg-gray-100 px-1 rounded">{codeContent}</code>;
+      }
+
+      return (
+        <div className="relative group">
+          <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
+            <button
+              onClick={() => navigator.clipboard.writeText(codeContent)}
+              className="hover:underline"
+            >
+              Copy
+            </button>
+            <button
+              onClick={() => handleEdit(codeContent)}
+              className="hover:underline"
+            >
+              Edit
+            </button>
+          </div>
+          <pre className="overflow-x-auto">
+            <code>{codeContent}</code>
+          </pre>
+        </div>
+      );
+    },
   };
 
   return (
@@ -23,24 +64,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        {/* Actions: Only for assistant */}
-        {!isUser && (
-          <div className="absolute top-2 right-3 text-sm text-gray-400 space-x-2">
-            <button
-              onClick={() => navigator.clipboard.writeText(message.content)}
-              className="hover:underline"
-            >
-              Copy
-            </button>
-            <button onClick={handleEdit} className="hover:underline">
-              Edit
-            </button>
-          </div>
-        )}
-
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
+          components={components}
         >
           {message.content}
         </ReactMarkdown>
