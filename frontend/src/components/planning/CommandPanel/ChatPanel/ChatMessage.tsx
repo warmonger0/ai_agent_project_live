@@ -19,7 +19,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`relative p-3 rounded-md w-full whitespace-pre-wrap prose prose-sm max-w-none ${
+        className={`relative p-3 rounded-md w-full whitespace-pre-wrap prose prose-sm max-w-[90%] ${
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
