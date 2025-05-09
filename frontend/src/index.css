@@ -2,12 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Typography rendering (markdown content) */
+@layer base {
+  .prose {
+    @apply prose-sm max-w-none;
+  }
+}
+
 /* Optional: Scrollbar tweaks */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
