@@ -9,6 +9,7 @@ export function useChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -21,15 +22,16 @@ export function useChat() {
     }
   }, []);
 
+  // Save to localStorage on update
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
+  // Handle chat message submission
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: ChatMessage = { role: "user", content: input };
-
     const base = [...messages, userMessage];
 
     setMessages([...base, { role: "assistant", content: "" }]);
@@ -69,11 +71,18 @@ export function useChat() {
     }
   };
 
+  // 🧼 New: clear chat history
+  const clearMessages = () => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   return {
     messages,
     input,
     setInput,
     loading,
     handleSend,
+    clearMessages, // <-- exposed to ChatPanel
   };
 }
