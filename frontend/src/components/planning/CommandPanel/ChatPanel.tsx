@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import ChatInput from "./ChatPanel/ChatInput";
-import { useChat } from "./useChat";
-import type { ChatMessage } from "./types";
+import { useChat } from "./ChatPanel/useChat";
+import type { ChatMessage } from "./ChatPanel/types";
 
 const ChatPanel: React.FC = () => {
   const { messages, input, setInput, loading, handleSend } = useChat();
