@@ -13,14 +13,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === "user";
 
   return (
-    <div
-      className={`p-3 rounded-md max-w-xl whitespace-pre-wrap ${
-        isUser
-          ? "bg-blue-100 self-end text-right"
-          : "bg-gray-100 self-start text-left"
-      }`}
-    >
-      <div className="prose prose-sm max-w-none">
+    <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`p-3 rounded-md whitespace-pre-wrap prose prose-sm max-w-prose ${
+          isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
+        }`}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
