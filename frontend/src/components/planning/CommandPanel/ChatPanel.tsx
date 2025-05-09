@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import ChatInput from "./ChatInput";
+import ChatInput from "./ChatPanel/ChatInput";
 import { useChat } from "./useChat";
 import type { ChatMessage } from "./types";
 
