@@ -2,13 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography rendering (markdown content) */
-@layer base {
-  .prose {
-    @apply prose-sm max-w-none;
-  }
-}
-
 /* Optional: Scrollbar tweaks */
 ::-webkit-scrollbar {
   width: 8px;
