@@ -1,18 +1,26 @@
 // File: frontend/src/components/planning/CommandPanel/ChatPanel/ChatPanel.tsx
 
 import React, { useEffect, useRef } from "react";
-import ChatInput from "./ChatPanel/ChatInput";
-import { useChat } from "./ChatPanel/useChat";
-import type { ChatMessage } from "./ChatPanel/types";
+import ChatInput, { ChatInputRef } from "./ChatInput";
+import { useChat } from "./useChat";
+import type { ChatMessage } from "./types";
 
 const ChatPanel: React.FC = () => {
   const { messages, input, setInput, loading, handleSend } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<ChatInputRef>(null);
 
-  // Auto-scroll on new message
+  // Scroll to bottom on new message
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Focus input after message send completes
+  useEffect(() => {
+    if (!loading) {
+      inputRef.current?.focusInput();
+    }
+  }, [loading]);
 
   return (
     <div className="flex flex-col h-full">
@@ -33,15 +41,15 @@ const ChatPanel: React.FC = () => {
         {loading && (
           <div className="text-gray-500 italic self-start">Thinking...</div>
         )}
-        {/* Anchor div for scrolling */}
         <div ref={scrollRef} />
       </div>
 
       {/* Chat input */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
         <ChatInput
+          ref={inputRef}
           value={input}
-          onChange={(val) => setInput(val)}
+          onChange={setInput}
           onSend={handleSend}
           disabled={loading}
         />
