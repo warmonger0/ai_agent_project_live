@@ -29,26 +29,25 @@ export function useChat() {
     if (!input.trim()) return;
 
     const userMessage: ChatMessage = { role: "user", content: input };
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      { role: "assistant", content: "" },
-    ]);
+
+    const base = [...messages, userMessage];
+
+    setMessages([...base, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
 
     try {
-      console.log("👋 Sending chat request with stream: true");
+      console.log("🟡 [useChat] Sending with stream: true");
       await sendChatMessage(
-        { messages: [...messages, userMessage], stream: true },
+        { messages: base, stream: true },
         undefined,
-        (chunk) => {
-          console.log("📥 Received chunk:", chunk);
+        (chunk: string) => {
+          console.log("🟢 [useChat] Received chunk:", JSON.stringify(chunk));
           setMessages((prev) => {
             const updated = [...prev];
             const last = updated[updated.length - 1];
 
-            if (last.role === "assistant") {
+            if (last?.role === "assistant") {
               updated[updated.length - 1] = {
                 ...last,
                 content: last.content + chunk,
@@ -59,7 +58,8 @@ export function useChat() {
           });
         }
       );
-    } catch {
+    } catch (err) {
+      console.error("🔴 [useChat] Stream error:", err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "❌ Error: Could not get a response." },
