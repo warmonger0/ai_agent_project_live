@@ -12,6 +12,10 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === "user";
 
+  const handleEdit = () => {
+    console.log("📝 Edit clicked:", message.content);
+  };
+
   return (
     <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
@@ -19,7 +23,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        {/* Copy + Edit buttons for assistant messages only */}
+        {/* Actions: Only for assistant */}
         {!isUser && (
           <div className="absolute top-2 right-3 text-sm text-gray-400 space-x-2">
             <button
@@ -28,10 +32,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             >
               Copy
             </button>
-            <button
-              onClick={() => console.log("Edit clicked")}
-              className="hover:underline"
-            >
+            <button onClick={handleEdit} className="hover:underline">
               Edit
             </button>
           </div>
