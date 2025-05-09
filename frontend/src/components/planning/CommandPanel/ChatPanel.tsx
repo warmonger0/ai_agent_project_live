@@ -6,18 +6,18 @@ import { useChat } from "./ChatPanel/useChat";
 import type { ChatMessage } from "./ChatPanel/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github.css";
 
 const ChatPanel: React.FC = () => {
   const { messages, input, setInput, loading, handleSend } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<ChatInputRef>(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Refocus input on message complete
   useEffect(() => {
     if (!loading) inputRef.current?.focusInput();
   }, [loading]);
@@ -35,12 +35,14 @@ const ChatPanel: React.FC = () => {
                 : "bg-gray-100 self-start text-left"
             }`}
           >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              className="prose prose-sm max-w-none"
-            >
-              {msg.content}
-            </ReactMarkdown>
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+              >
+                {msg.content}
+              </ReactMarkdown>
+            </div>
           </div>
         ))}
         {loading && (
