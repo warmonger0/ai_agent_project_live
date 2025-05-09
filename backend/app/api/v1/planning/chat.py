@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import httpx
 import logging
+import asyncio
 
 router = APIRouter()
 
@@ -23,7 +24,6 @@ async def chat_with_deepseek(request: Request):
 
         logging.warning("[CHAT] Request payload: %s", body)
 
-        # STREAM MODE
         if stream:
             async def stream_gen():
                 async with httpx.AsyncClient(timeout=None) as client:
@@ -41,11 +41,13 @@ async def chat_with_deepseek(request: Request):
                             raise HTTPException(status_code=resp.status_code, detail=text.decode())
 
                         async for chunk in resp.aiter_text():
-                            yield chunk
+                            if chunk.strip():
+                                yield f"data: {chunk}\n\n"
+                            await asyncio.sleep(0.01)  # Yield time for frontend rendering
 
-            return StreamingResponse(stream_gen(), media_type="text/plain")
+            return StreamingResponse(stream_gen(), media_type="text/event-stream")
 
-        # NON-STREAM MODE
+        # fallback to regular (non-stream) mode
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
