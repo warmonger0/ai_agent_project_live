@@ -7,8 +7,8 @@ describe("ComponentName", () => {
 
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import useChat from "@/components/planning/ChatPanel/useChat";
-import { sendChatMessage } from "@/lib/sendChatMessage";
+import useChat from "@/components/planning/CommandPanel/ChatPanel/useChat";
+import { sendChatMessage } from "@/components/planning/CommandPanel/ChatPanel/sendChatMessage";
 import type { ChatMessage } from "@/types";
 
 vi.mock("@/lib/sendChatMessage");

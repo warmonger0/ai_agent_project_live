@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import httpx
 import logging
@@ -11,30 +12,50 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+    stream: bool = False
 
-class ChatChoice(BaseModel):
-    message: ChatMessage
-
-class ChatResponse(BaseModel):
-    choices: list[ChatChoice]
-
-@router.post("/chat", response_model=ChatResponse)
-async def chat_with_deepseek(request: ChatRequest):
+@router.post("/chat")
+async def chat_with_deepseek(request: Request):
     try:
-        logging.warning("[CHAT] Request payload: %s", request.dict())
+        body = await request.json()
+        messages = body.get("messages", [])
+        stream = body.get("stream", False)
 
+        logging.warning("[CHAT] Request payload: %s", body)
+
+        # STREAM MODE
+        if stream:
+            async def stream_gen():
+                async with httpx.AsyncClient(timeout=None) as client:
+                    async with client.stream(
+                        "POST",
+                        "http://localhost:11434/api/chat",
+                        json={
+                            "model": "deepseek-coder:latest",
+                            "messages": messages,
+                            "stream": True,
+                        },
+                    ) as resp:
+                        if resp.status_code != 200:
+                            text = await resp.aread()
+                            raise HTTPException(status_code=resp.status_code, detail=text.decode())
+
+                        async for chunk in resp.aiter_text():
+                            yield chunk
+
+            return StreamingResponse(stream_gen(), media_type="text/plain")
+
+        # NON-STREAM MODE
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
                 json={
                     "model": "deepseek-coder:latest",
-                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
+                    "messages": messages,
                     "stream": False,
                 },
                 timeout=60,
             )
-
-        logging.warning("[CHAT] Ollama raw response: %s", response.text)
 
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"Ollama error: {response.status_code} - {response.text}")

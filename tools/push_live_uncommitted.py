@@ -22,7 +22,6 @@ def has_meaningful_changes():
     result = subprocess.run(
         ["git", "status", "--porcelain"], capture_output=True, text=True
     )
-    # We only care about modified or untracked files that are relevant to the push
     changes = [line for line in result.stdout.splitlines() if line]
     return changes
 
@@ -31,44 +30,43 @@ if not Path(".git").exists():
     print("❌ Not a git repository.")
     exit(1)
 
-# Only push from temp-live branch
-branch = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True).stdout.strip()
-if branch != "temp-live":
-    print("⚠️ Not on temp-live branch. Skipping push.")
-    exit(0)
+# Identify current branch
+branch = subprocess.run(
+    ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True
+).stdout.strip()
+print(f"📦 Current local branch: {branch} (pushing to github-live:master regardless)")
 
 # Detect if there are any meaningful changes
 if not has_meaningful_changes():
     print("⚠️ No meaningful changes detected. Skipping push.")
     exit(0)
 
-# Stage changes if any
+# Stage changes
 print("📌 Staging changes...")
 run(["git", "add", "."], silent=True)
 
-# Check if there are actually any staged changes
+# Check if anything is staged
 if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-    print("⚠️ No staged changes to commit. Skipping push and listening for new changes...")
+    print("⚠️ No staged changes to commit. Skipping push.")
     exit(0)
 
-# Commit changes
+# Commit
 print("📌 Committing changes...")
-run(["git", "commit", "-m", "📌 Auto-commit snapshot (temp-live sync)"])
+run(["git", "commit", "-m", f"📌 Auto-commit snapshot ({branch} sync)"])
 
-# Push updates to GitHub
-print("🚀 Pushing updates to github-live:main...")
+# Push
+print("🚀 Pushing updates to github-live:master...")
 result = subprocess.run(
-    ["git", "push", "-f", "github-live", "temp-live:main"],
+    ["git", "push", "-f", "github-live", f"{branch}:master"],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
     text=True
 )
 
 if result.returncode == 0:
-    print("✅ Snapshot updated and pushed.")
-    print("✅ Live snapshot pushed to GitHub.")
+    print("✅ Live snapshot pushed to GitHub (github-live:master).")
 else:
     print(f"❌ Error during push:\n{result.stderr}")
     exit(1)
 
-print("🔁 Push complete. Listening for new changes...")
+print("🔁 Push complete.")
