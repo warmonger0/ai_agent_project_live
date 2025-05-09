@@ -38,6 +38,7 @@ export async function sendChatMessage(
     throw new Error(`Chat request failed: ${response.status} - ${error}`);
   }
 
+  // Non-streamed mode
   if (!isStreaming) {
     try {
       return await response.json();
@@ -46,6 +47,7 @@ export async function sendChatMessage(
     }
   }
 
+  // Streamed mode
   const reader = response.body?.getReader();
   const decoder = new TextDecoder("utf-8");
   let fullText = "";
@@ -58,18 +60,20 @@ export async function sendChatMessage(
     const { value, done } = await reader.read();
     if (done) break;
 
-    const chunk = decoder.decode(value, { stream: true });
-    fullText += chunk;
+    const raw = decoder.decode(value, { stream: true });
 
-    if (onStreamChunk) {
-      onStreamChunk(chunk);
+    for (const line of raw.split("\n")) {
+      if (line.startsWith("data:")) {
+        try {
+          const json = JSON.parse(line.slice(5).trim());
+          const chunk = json.message?.content ?? "";
+          fullText += chunk;
+          onStreamChunk?.(chunk);
+        } catch {
+          // Ignore malformed lines
+        }
+      }
     }
-  }
-
-  fullText += decoder.decode(); // flush remainder
-
-  if (!fullText.trim()) {
-    throw new Error("No content received from stream.");
   }
 
   return {
