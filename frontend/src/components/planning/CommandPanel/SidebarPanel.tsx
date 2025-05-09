@@ -1,5 +1,5 @@
 import React from "react";
-import PhaseSidebar from "./PhaseSidebar";
+import PhaseSidebar from "./SidebarPanel/PhaseSidebar";
 
 const Sidebar: React.FC = () => {
   return (
@@ -12,7 +12,9 @@ const Sidebar: React.FC = () => {
       {/* Remaining space for future sidebar tools/info */}
       <div className="flex-1 p-4 overflow-y-auto">
         {/* Add more sidebar content here later */}
-        <p className="text-sm text-gray-500 italic">Sidebar tools coming soon...</p>
+        <p className="text-sm text-gray-500 italic">
+          Sidebar tools coming soon...
+        </p>
       </div>
     </div>
   );
