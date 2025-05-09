@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optional: smooth prose typography defaults */
+.prose {
+  @apply prose-sm max-w-none;
+}
+
+/* Optional: dark mode support (if you extend it later) */
+/* 
+@layer base {
+  html.dark {
+    color-scheme: dark;
+  }
+}
+*/
+
+/* Optional: Add custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
