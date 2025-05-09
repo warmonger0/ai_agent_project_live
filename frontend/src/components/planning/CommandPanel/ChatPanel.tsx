@@ -1,5 +1,3 @@
-// File: frontend/src/components/planning/CommandPanel/ChatPanel/ChatPanel.tsx
-
 import React, { useEffect, useRef } from "react";
 import ChatInput, { ChatInputRef } from "./ChatPanel/ChatInput";
 import { useChat } from "./ChatPanel/useChat";
@@ -10,20 +8,42 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 
 const ChatPanel: React.FC = () => {
-  const { messages, input, setInput, loading, handleSend } = useChat();
+  const {
+    messages,
+    input,
+    setInput,
+    loading,
+    handleSend,
+    clearMessages, // 🧼 now used
+  } = useChat();
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<ChatInputRef>(null);
 
+  // Scroll to bottom on new message
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Focus input after message completes
   useEffect(() => {
     if (!loading) inputRef.current?.focusInput();
   }, [loading]);
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header with Clear button */}
+      <div className="flex justify-between items-center px-4 py-2 bg-gray-100 border-b">
+        <h2 className="text-lg font-semibold">Agent Chat</h2>
+        <button
+          onClick={clearMessages}
+          className="text-sm text-red-500 hover:underline"
+          disabled={loading}
+        >
+          Clear
+        </button>
+      </div>
+
       {/* Message list */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
         {messages.map((msg: ChatMessage, idx: number) => (
