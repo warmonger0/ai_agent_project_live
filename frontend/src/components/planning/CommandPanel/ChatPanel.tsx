@@ -1,29 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import ChatInput, { ChatInputRef } from "./ChatPanel/ChatInput";
+import ChatMessageList from "./ChatPanel/ChatMessageList";
 import { useChat } from "./ChatPanel/useChat";
-import type { ChatMessage } from "./ChatPanel/types";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
-import "highlight.js/styles/github.css";
 
 const ChatPanel: React.FC = () => {
-  const {
-    messages,
-    input,
-    setInput,
-    loading,
-    handleSend,
-    clearMessages, // 🧼 now used
-  } = useChat();
+  const { messages, input, setInput, loading, handleSend, clearMessages } =
+    useChat();
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<ChatInputRef>(null);
-
-  // Scroll to bottom on new message
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Focus input after message completes
   useEffect(() => {
@@ -45,31 +29,7 @@ const ChatPanel: React.FC = () => {
       </div>
 
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-        {messages.map((msg: ChatMessage, idx: number) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-md max-w-xl whitespace-pre-wrap ${
-              msg.role === "user"
-                ? "bg-blue-100 self-end text-right"
-                : "bg-gray-100 self-start text-left"
-            }`}
-          >
-            <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-              >
-                {msg.content}
-              </ReactMarkdown>
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div className="text-gray-500 italic self-start">Thinking...</div>
-        )}
-        <div ref={scrollRef} />
-      </div>
+      <ChatMessageList messages={messages} loading={loading} />
 
       {/* Input box */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
