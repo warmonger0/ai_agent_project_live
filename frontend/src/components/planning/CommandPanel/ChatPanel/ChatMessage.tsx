@@ -1,4 +1,8 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github.css";
 import type { ChatMessage as ChatMessageType } from "./types";
 
 interface ChatMessageProps {
@@ -16,7 +20,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           : "bg-gray-100 self-start text-left"
       }`}
     >
-      {message.content}
+      <div className="prose prose-sm max-w-none">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+        >
+          {message.content}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 };
