@@ -8,7 +8,7 @@ import {
   cleanup,
 } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
-import ChatPanel from "../../components/planning/ChatPanel/ChatMessageList";
+import ChatPanel from "./ChatPanel/ChatMessageList";
 import { sendChatMessage } from "./ChatPanel/sendChatMessage";
 
 // Mock the sendChatMessage function
