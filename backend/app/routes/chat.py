@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from backend.app import crud, models, schemas
-from app.db.session import get_db
+from backend.app.db.session import get_db
+
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
