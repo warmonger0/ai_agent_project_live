@@ -1,11 +1,10 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { useChat } from "./useChat"; // ✅ same folder
-import type { ChatRequest, ChatResponse } from "./sendChatMessage";
-import sendChatMessage from "./sendChatMessage"; // ✅ default import from same folder
+import { useChat } from "./useChat"; // ✅ Named import
+import { sendChatMessage } from "./sendChatMessage"; // ✅ Named import
 
 vi.mock("./sendChatMessage", () => ({
-  default: vi.fn(),
+  sendChatMessage: vi.fn(),
 }));
 
 describe("useChat", () => {
@@ -17,11 +16,11 @@ describe("useChat", () => {
   });
 
   it("sends user message and receives assistant reply", async () => {
-    const mockResponse: ChatResponse = {
+    const mockResponse = {
       choices: [{ message: { role: "assistant", content: "Hello back!" } }],
     };
 
-    const mockFn = sendChatMessage as ReturnType<typeof vi.fn>;
+    const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
     mockFn.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useChat("2"));
@@ -39,7 +38,7 @@ describe("useChat", () => {
   });
 
   it("sets error message on failed request", async () => {
-    const mockFn = sendChatMessage as ReturnType<typeof vi.fn>;
+    const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
     mockFn.mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => useChat("3"));
