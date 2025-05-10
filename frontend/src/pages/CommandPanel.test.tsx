@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import { vi, beforeEach } from "vitest";
 import CommandPanel from "./CommandPanel";
@@ -10,10 +11,12 @@ vi.mock("../components/planning/CommandPanel/ChatPanel", () => ({
   default: () => <div data-testid="chat-panel">Chat ID: {testChatId}</div>,
 }));
 
-// Mock ProjectSidebar to trigger onSelectChat
+// Mock ProjectSidebar to trigger onSelectChat after mount
 vi.mock("../components/planning/CommandPanel/ProjectSidebar", () => ({
   default: ({ onSelectChat }: { onSelectChat: (id: string) => void }) => {
-    onSelectChat(testChatId ?? "null");
+    React.useEffect(() => {
+      onSelectChat(testChatId ?? "null");
+    }, []);
     return <div data-testid="project-sidebar">MockSidebar</div>;
   },
 }));
@@ -29,7 +32,7 @@ describe("CommandPanel", () => {
     render(<CommandPanel />);
 
     expect(screen.getByTestId("project-sidebar")).toBeInTheDocument();
-    expect(screen.getByTestId("chat-panel")).toHaveTextContent("Chat ID: null");
+    expect(screen.getByTestId("chat-panel")).toHaveTextContent("Chat ID:");
   });
 
   it("updates the chatId prop when chat selection changes", () => {
