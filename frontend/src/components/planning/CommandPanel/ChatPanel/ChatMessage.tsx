@@ -1,9 +1,12 @@
+// File: frontend/src/components/planning/CommandPanel/ChatPanel/ChatMessage.tsx
+
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 import type { ChatMessage as ChatMessageType } from "./types";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -11,6 +14,7 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === "user";
+  const { copy, copied } = useCopyToClipboard();
 
   const handleEdit = (code: string) => {
     console.log("📝 Edit clicked:", code);
@@ -38,13 +42,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
       return (
         <div className="relative group">
-          {/* Floating actions */}
           <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
             <button
-              onClick={() => navigator.clipboard.writeText(codeContent)}
+              onClick={() => copy(codeContent)}
               className="hover:underline"
             >
-              Copy
+              {copied ? "Copied" : "Copy"}
             </button>
             <button
               onClick={() => handleEdit(codeContent)}
