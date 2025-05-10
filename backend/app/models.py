@@ -79,8 +79,9 @@ class ChatMessage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
-    role = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # user or assistant
     content = Column(Text, nullable=False)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)  # ✅ required for ordering
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     chat = relationship("Chat", back_populates="messages")
+
