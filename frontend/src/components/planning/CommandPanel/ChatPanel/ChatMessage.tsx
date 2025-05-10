@@ -25,11 +25,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       children,
     }: {
       inline?: boolean;
-      children: string | string[];
+      children: React.ReactNode;
     }) {
-      const codeContent = Array.isArray(children)
-        ? children.join("")
-        : children;
+      // Normalize to string content
+      let codeContent = "";
+      if (Array.isArray(children)) {
+        codeContent = children
+          .map((child) => (typeof child === "string" ? child : ""))
+          .join("");
+      } else if (typeof children === "string") {
+        codeContent = children;
+      }
 
       if (inline) {
         return (
