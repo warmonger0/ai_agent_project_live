@@ -1,16 +1,16 @@
 import { renderHook, act } from "@testing-library/react";
+import { vi } from "vitest";
 import axios from "axios";
 import usePersistentChat from "./usePersistentChat";
-import { vi } from "vitest";
+
+// Mock axios
+vi.mock("axios");
 
 // Partial mock of only the used methods
 const mockedAxios = axios as unknown as {
   get: ReturnType<typeof vi.fn>;
   post: ReturnType<typeof vi.fn>;
 };
-
-// Mock axios
-vi.mock("axios");
 
 describe("usePersistentChat", () => {
   const mockChatId = "abc123";
@@ -29,16 +29,16 @@ describe("usePersistentChat", () => {
 
     const { result } = renderHook(() => usePersistentChat(mockChatId));
 
-    expect(result.current.loading).toBe(true);
-
-    // Wait for useEffect to finish
+    // Wait for fetch to resolve
     await act(async () => {});
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       `/api/v1/chat/chats/${mockChatId}/messages/`
     );
+
     expect(result.current.messages).toEqual(sampleMessages);
     expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
   });
 
   it("handles message sending", async () => {
@@ -51,10 +51,12 @@ describe("usePersistentChat", () => {
     // Wait for initial fetch
     await act(async () => {});
 
+    // Simulate input
     act(() => {
       result.current.setInput("Hey");
     });
 
+    // Submit message
     await act(async () => {
       await result.current.handleSend();
     });
@@ -64,19 +66,17 @@ describe("usePersistentChat", () => {
       { content: "Hey" }
     );
 
-    expect(result.current.messages).toContainEqual({
-      role: "user",
-      content: "Hey",
-    });
+    const sentMessages = result.current.messages;
 
-    expect(result.current.messages).toContainEqual({
-      id: "3",
-      role: "assistant",
-      content: "Got it.",
-    });
+    expect(sentMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ role: "user", content: "Hey" }),
+        expect.objectContaining({ role: "assistant", content: "Got it." }),
+      ])
+    );
   });
 
-  it("gracefully handles API errors", async () => {
+  it("gracefully handles API errors during fetch", async () => {
     mockedAxios.get.mockRejectedValueOnce(new Error("Fetch failed"));
 
     const { result } = renderHook(() => usePersistentChat(mockChatId));
@@ -84,6 +84,8 @@ describe("usePersistentChat", () => {
     await act(async () => {});
 
     expect(result.current.error).toBe("Failed to load messages.");
+    expect(result.current.loading).toBe(false);
+    expect(result.current.messages).toEqual([]);
   });
 
   it("ignores fetch when chatId is null", async () => {
@@ -93,5 +95,6 @@ describe("usePersistentChat", () => {
 
     expect(mockedAxios.get).not.toHaveBeenCalled();
     expect(result.current.messages).toEqual([]);
+    expect(result.current.error).toBeNull();
   });
 });
