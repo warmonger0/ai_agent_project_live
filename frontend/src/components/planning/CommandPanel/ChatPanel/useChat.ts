@@ -8,6 +8,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // ✅ Add error state
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -36,6 +37,7 @@ export function useChat() {
     setMessages([...base, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
+    setError(null); // ✅ Clear any existing error on new attempt
 
     try {
       console.log("🟡 [useChat] Sending with stream: true");
@@ -59,8 +61,9 @@ export function useChat() {
           });
         }
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("🔴 [useChat] Stream error:", err);
+      setError(err.message || "Unknown error"); // ✅ Store the error
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "❌ Error: Could not get a response." },
@@ -72,6 +75,7 @@ export function useChat() {
 
   const clearMessages = () => {
     setMessages([]);
+    setError(null); // ✅ Clear error when clearing chat
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -82,5 +86,6 @@ export function useChat() {
     loading,
     handleSend,
     clearMessages,
+    error, // ✅ Export error
   };
 }
