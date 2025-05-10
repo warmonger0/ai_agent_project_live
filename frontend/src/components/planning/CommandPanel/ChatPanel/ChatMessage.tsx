@@ -53,7 +53,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               Edit
             </button>
           </div>
-          <pre className="bg-gray-800 text-white rounded-md p-4 overflow-x-auto text-sm">
+          <pre className="bg-gray-800 text-white rounded-md p-4 overflow-x-auto text-sm max-w-full">
             <code>{codeContent}</code>
           </pre>
         </div>
@@ -64,17 +64,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`relative p-3 rounded-md w-full whitespace-pre-wrap prose prose-sm max-w-[90%] ${
+        className={`relative p-3 rounded-md w-full whitespace-pre-wrap bg-opacity-90 ${
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeHighlight]}
-          components={components}
-        >
-          {message.content}
-        </ReactMarkdown>
+        <div className="prose prose-sm max-w-full break-words">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+            components={components}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
