@@ -47,9 +47,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         );
       }
 
+      // Use a fragment instead of a div inside markdown to prevent <p><div>...</div></p> nesting errors
       return (
-        <div className="my-2">
-          <div className="relative group">
+        <>
+          <div className="relative group my-2">
             <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
               <CopyButton text={codeContent || ""} />
               <button
@@ -63,7 +64,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               <code>{codeContent}</code>
             </pre>
           </div>
-        </div>
+        </>
       );
     },
   };
