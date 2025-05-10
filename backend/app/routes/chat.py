@@ -24,11 +24,10 @@ def read_projects(db: Session = Depends(get_db)):
 
 @router.get("/projects/{project_id}", response_model=schemas.Project)
 def read_project(project_id: int, db: Session = Depends(get_db)):
-    db_project = crud.get_project(db=db, project_id=project_id)
+    db_project = db.query(models.Project).options(selectinload(models.Project.chats)).filter(models.Project.id == project_id).first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return db_project
-
 
 # ──────────────── Chat Endpoints ────────────────
 
@@ -50,7 +49,6 @@ def read_chat(chat_id: int, db: Session = Depends(get_db)):
     if db_chat is None:
         raise HTTPException(status_code=404, detail="Chat not found")
     return db_chat
-
 
 # ──────────────── Message Endpoints ────────────────
 
