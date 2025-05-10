@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { useChat } from "./useChat"; // ✅ Named import
-import { sendChatMessage } from "./sendChatMessage"; // ✅ Named import
+import sendChatMessage from "./sendChatMessage"; // ✅ use default import
 
 vi.mock("./sendChatMessage", () => ({
   sendChatMessage: vi.fn(),
