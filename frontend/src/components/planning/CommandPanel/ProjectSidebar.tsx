@@ -14,35 +14,44 @@ type Project = {
 interface ProjectSidebarProps {
   selectedChatId: number | null;
   onSelectChat: (chatId: number) => void;
-  onSelectProject: (projectId: number) => void; // ✅ ADDED
+  onSelectProject: (projectId: number) => void;
 }
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   selectedChatId,
   onSelectChat,
-  onSelectProject, // ✅ RECEIVED
+  onSelectProject,
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  );
 
-  // Fetch all projects on mount
   useEffect(() => {
     fetch("/api/v1/chat/projects")
       .then((res) => res.json())
-      .then(setProjects);
+      .then((data) => {
+        setProjects(data);
+        console.log("📦 Projects loaded:", data);
+      })
+      .catch((err) => console.error("Failed to load projects:", err));
   }, []);
 
-  // Fetch chats when a project is selected
   useEffect(() => {
-    if (selectedProject) {
-      fetch(`/api/v1/chat/projects/${selectedProject.id}/chats`)
-        .then((res) => res.json())
-        .then(setChats);
-    } else {
+    if (selectedProjectId === null) {
       setChats([]);
+      return;
     }
-  }, [selectedProject]);
+
+    fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChats(data);
+        console.log(`💬 Chats for project ${selectedProjectId}:`, data);
+      })
+      .catch((err) => console.error("Failed to load chats:", err));
+  }, [selectedProjectId]);
 
   return (
     <div className="w-64 border-r border-gray-200 p-4 bg-gray-50 dark:bg-gray-900">
@@ -57,11 +66,10 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         className="w-full border rounded p-2 mb-4 bg-white dark:bg-gray-800 dark:text-white"
         onChange={(e) => {
           const id = parseInt(e.target.value, 10);
-          const proj = projects.find((p) => p.id === id) || null;
-          setSelectedProject(proj);
-          onSelectProject(id); // ✅ EMIT UPWARD
+          setSelectedProjectId(id);
+          onSelectProject(id);
         }}
-        value={selectedProject?.id || ""}
+        value={selectedProjectId ?? ""}
       >
         <option value="" disabled>
           Select a project
