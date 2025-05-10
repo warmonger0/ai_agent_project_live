@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import useChat from "./useChat"; // ✅ same folder
+import { useChat } from "./useChat"; // ✅ same folder
 import type { ChatRequest, ChatResponse } from "./sendChatMessage";
 import sendChatMessage from "./sendChatMessage"; // ✅ default import from same folder
 
