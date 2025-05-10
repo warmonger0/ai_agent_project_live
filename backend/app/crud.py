@@ -54,7 +54,7 @@ def create_chat_message(
         chat_id=chat_id,
         role=role,
         content=content,
-        timestamp=datetime.utcnow(),
+        created_at=datetime.utcnow(),
     )
     db.add(db_msg)
     db.commit()
