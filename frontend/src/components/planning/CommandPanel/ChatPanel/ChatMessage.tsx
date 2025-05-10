@@ -22,14 +22,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const extractText = (node: React.ReactNode): string => {
     if (typeof node === "string") return node;
     if (Array.isArray(node)) return node.map(extractText).join("");
-
     if (React.isValidElement(node)) {
       const el = node as React.ReactElement<{ children?: React.ReactNode }>;
-      if (el.props.children) {
-        return extractText(el.props.children);
-      }
+      if (el.props.children) return extractText(el.props.children);
     }
-
     return "";
   };
 
@@ -52,19 +48,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       }
 
       return (
-        <div className="relative group">
-          <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
-            <CopyButton text={codeContent} />
-            <button
-              onClick={() => handleEdit(codeContent)}
-              className="hover:underline"
-            >
-              Edit
-            </button>
+        <div className="my-2">
+          <div className="relative group">
+            <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
+              <CopyButton text={codeContent || ""} />
+              <button
+                onClick={() => handleEdit(codeContent)}
+                className="hover:underline"
+              >
+                Edit
+              </button>
+            </div>
+            <pre className="bg-gray-800 text-white rounded-md p-4 text-sm break-words whitespace-pre-wrap overflow-auto max-w-full">
+              <code>{codeContent}</code>
+            </pre>
           </div>
-          <pre className="bg-gray-800 text-white rounded-md p-4 text-sm break-words whitespace-pre-wrap overflow-auto max-w-full">
-            <code>{codeContent}</code>
-          </pre>
         </div>
       );
     },
