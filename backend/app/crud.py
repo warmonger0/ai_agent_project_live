@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session, selectinload
 from datetime import datetime
 
-from backend.app import models, schemas
-
+from backend.app import models
 
 # --- Projects ---
 def create_project(db: Session, name: str) -> models.Project:
@@ -12,14 +11,22 @@ def create_project(db: Session, name: str) -> models.Project:
     db.refresh(db_project)
     return db_project
 
-
 def get_project(db: Session, project_id: int) -> models.Project | None:
     return db.query(models.Project).filter(models.Project.id == project_id).first()
-
 
 def get_all_projects(db: Session) -> list[models.Project]:
     return db.query(models.Project).all()
 
+def update_project_understanding(
+    db: Session, project_id: int, new_understanding: str
+) -> models.Project | None:
+    project = get_project(db, project_id)
+    if not project:
+        return None
+    project.understanding = new_understanding
+    db.commit()
+    db.refresh(project)
+    return project
 
 # --- Chats ---
 def create_chat(db: Session, project_id: int, title: str | None = None) -> models.Chat:
@@ -29,19 +36,16 @@ def create_chat(db: Session, project_id: int, title: str | None = None) -> model
     db.refresh(db_chat)
     return db_chat
 
-
 def get_chat(db: Session, chat_id: int) -> models.Chat | None:
     return (
         db.query(models.Chat)
-        .options(selectinload(models.Chat.messages))  # ✅ Preload messages
+        .options(selectinload(models.Chat.messages))
         .filter(models.Chat.id == chat_id)
         .first()
     )
 
-
 def get_chats_for_project(db: Session, project_id: int) -> list[models.Chat]:
     return db.query(models.Chat).filter(models.Chat.project_id == project_id).all()
-
 
 # --- Chat Messages ---
 def create_chat_message(
@@ -60,7 +64,6 @@ def create_chat_message(
     db.commit()
     db.refresh(db_msg)
     return db_msg
-
 
 def get_messages_for_chat(db: Session, chat_id: int) -> list[models.ChatMessage]:
     return (
