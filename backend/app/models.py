@@ -57,6 +57,7 @@ class Project(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False, index=True)
+    understanding = Column(Text, nullable=True)  # ✅ new column
     created_at = Column(DateTime, default=datetime.utcnow)
 
     chats = relationship(
