@@ -12,8 +12,6 @@
 │   │   ├── alembic.ini
 │   │   ├── api
 │   │   │   └── v1
-│   │   │       ├── __init__.py
-│   │   │       └── planning
 │   │   ├── backend_tree.txt
 │   │   ├── controllers
 │   │   │   ├── deployment_handler.py
@@ -29,6 +27,7 @@
 │   │   │   ├── api_response.py
 │   │   │   ├── config.py
 │   │   │   └── error_handler.py
+│   │   ├── crud.py
 │   │   ├── db
 │   │   │   ├── __init__.py
 │   │   │   ├── session.py
@@ -40,8 +39,6 @@
 │   │   │   ├── README
 │   │   │   ├── script.py.mako
 │   │   │   └── versions
-│   │   │       ├── 2d69244356e1_add_error_message_timestamp_completed_.py
-│   │   │       └── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
 │   │   ├── models.py
 │   │   ├── plugins
 │   │   │   ├── echo.py
@@ -51,6 +48,7 @@
 │   │   │   └── test_plugin.py
 │   │   ├── requirements.txt
 │   │   ├── routes
+│   │   │   ├── chat.py
 │   │   │   ├── health.py
 │   │   │   ├── __init__.py
 │   │   │   ├── logs.py
@@ -71,45 +69,8 @@
 │   │   │   ├── conftest.py
 │   │   │   ├── coverage_summary.json
 │   │   │   ├── integration
-│   │   │   │   ├── test_deployment_handler.py
-│   │   │   │   ├── test_plugin_spec_route.py
-│   │   │   │   ├── test_ssh_deploy.py
-│   │   │   │   └── test_task_routes.py
 │   │   │   ├── qa
-│   │   │   │   └── test_qa_enforcer.py
 │   │   │   └── unit
-│   │   │       ├── test_api_response.py
-│   │   │       ├── test_config.py
-│   │   │       ├── test_echo.py
-│   │   │       ├── test_error_handler.py
-│   │   │       ├── test_execution_tracker.py
-│   │   │       ├── test_healing_controller.py
-│   │   │       ├── test_healing_loop.py
-│   │   │       ├── test_health_controller.py
-│   │   │       ├── test_insert_failed_task.py
-│   │   │       ├── test_json_utils.py
-│   │   │       ├── test_loader.py
-│   │   │       ├── test_logger.py
-│   │   │       ├── test_logs_controller.py
-│   │   │       ├── test_logs.py
-│   │   │       ├── test_main.py
-│   │   │       ├── test_model_router.py
-│   │   │       ├── test_models.py
-│   │   │       ├── test_monitor.py
-│   │   │       ├── test_ollama_healthcheck.py
-│   │   │       ├── test_plugin_execute.py
-│   │   │       ├── test_plugin_history.py
-│   │   │       ├── test_plugin_list.py
-│   │   │       ├── test_plugin_loader.py
-│   │   │       ├── test_plugin_spec.py
-│   │   │       ├── test_runner.py
-│   │   │       ├── test_schemas.py
-│   │   │       ├── test_session.py
-│   │   │       ├── test_ssh_client.py
-│   │   │       ├── test_status_controller.py
-│   │   │       ├── test_task_controller.py
-│   │   │       ├── test_task_db.py
-│   │   │       └── test_tasks.py
 │   │   └── utils
 │   │       ├── devtools.py
 │   │       ├── json_utils.py
@@ -127,7 +88,10 @@
 │   │   └── versions
 │   │       ├── 2d69244356e1_add_error_message_timestamp_completed_.py
 │   │       ├── 3fc49bfa94a6_initial_model_baseline.py
-│   │       └── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
+│   │       ├── 506e04309528_fix_chat_title_and_add_timestamp_to_.py
+│   │       ├── afda61306ff8_merge_plugin_and_chat_schema_heads.py
+│   │       ├── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
+│   │       └── ff12ad0ec871_fix_chatmessage_to_use_created_at.py
 │   ├── plugins
 │   │   └── echo.py
 │   ├── requirements.txt
@@ -187,6 +151,7 @@
 ├── .env
 ├── frontend
 │   ├── 5173dev
+│   ├── cert.pem
 │   ├── components.json
 │   ├── .env
 │   ├── eslint.config.js
@@ -194,6 +159,7 @@
 │   ├── .gitignore
 │   ├── index.html
 │   ├── jest.config.mjs
+│   ├── key.pem
 │   ├── package.json
 │   ├── package-lock.json
 │   ├── postcss.config.cjs
@@ -209,86 +175,36 @@
 │   │   ├── App.tsx
 │   │   ├── components
 │   │   │   ├── DeploymentLogs
-│   │   │   │   └── DeploymentLogs.test.tsx
 │   │   │   ├── LogViewer
-│   │   │   │   └── LogViewer.integration.test.ts
 │   │   │   ├── planning
-│   │   │   │   ├── ChatPanel
-│   │   │   │   ├── ChatPanel.tsx
-│   │   │   │   ├── CommandPanel
-│   │   │   │   ├── FileTreeTab.tsx
-│   │   │   │   ├── IssuesTab.tsx
-│   │   │   │   ├── PhaseSidebar.tsx
-│   │   │   │   ├── TabbedInfoPanel
-│   │   │   │   ├── TabbedPanel.tsx
-│   │   │   │   └── UnderstandingTab.tsx
 │   │   │   ├── plugin
-│   │   │   │   ├── PluginExecutionForm.tsx
-│   │   │   │   ├── PluginForm.test.tsx
-│   │   │   │   ├── PluginList.tsx
-│   │   │   │   ├── PluginPanel.test.tsx
-│   │   │   │   ├── PluginResult.test.tsx
-│   │   │   │   └── PluginResult.tsx
 │   │   │   ├── PluginExecutionForm.tsx
 │   │   │   ├── PluginHistory
-│   │   │   │   └── PluginHistory.test.tsx
 │   │   │   ├── PluginHistory.tsx
 │   │   │   ├── PluginPanel.tsx
 │   │   │   ├── StatusBadge
-│   │   │   │   └── StatusBadge.test.tsx
 │   │   │   ├── table
-│   │   │   │   ├── PluginHistoryRow._old.tsx
-│   │   │   │   ├── PluginHistoryRow.tsx
-│   │   │   │   ├── Table.tsx
-│   │   │   │   └── TaskRow.tsx
 │   │   │   ├── TaskTable
-│   │   │   │   ├── TaskRow.test.tsx
-│   │   │   │   └── TaskTable.test.tsx
 │   │   │   ├── TaskTable.tsx
 │   │   │   └── ui
-│   │   │       ├── badge.tsx
-│   │   │       ├── badge-variants.ts
-│   │   │       ├── button.tsx
-│   │   │       ├── button-variants.ts
-│   │   │       ├── card.tsx
-│   │   │       ├── checkbox.tsx
-│   │   │       ├── input.tsx
-│   │   │       ├── status-badge.tsx
-│   │   │       ├── table.tsx
-│   │   │       └── __tests__
+│   │   ├── hooks
+│   │   │   ├── usePersistentChat.test.ts
+│   │   │   └── usePersistentChat.ts
 │   │   ├── index.css
 │   │   ├── lib
 │   │   │   ├── constants.ts
-│   │   │   ├── sendChatMessage.test.ts
-│   │   │   ├── sendChatMessage.ts
 │   │   │   ├── services
-│   │   │   │   ├── api.ts
-│   │   │   │   ├── healthService.ts
-│   │   │   │   ├── logService.ts
-│   │   │   │   ├── pluginService.test.ts
-│   │   │   │   ├── pluginService.ts
-│   │   │   │   └── taskService.ts
 │   │   │   ├── services_backup_js_20250430_075405
-│   │   │   │   ├── api.ts
-│   │   │   │   ├── healthService.ts
-│   │   │   │   ├── logService.ts
-│   │   │   │   ├── pluginService.ts
-│   │   │   │   └── taskService.ts
 │   │   │   ├── types
-│   │   │   │   └── plugin.ts
 │   │   │   ├── utils
-│   │   │   │   ├── apiHelpers.test.ts
-│   │   │   │   └── apiHelpers.ts
 │   │   │   └── utils.ts
 │   │   ├── main.tsx
 │   │   ├── pages
 │   │   │   ├── CommandPanel.tsx
 │   │   │   ├── DeploymentLogs.tsx
 │   │   │   ├── SystemHealth
-│   │   │   │   └── SystemHealth.test.tsx
 │   │   │   ├── SystemHealth.tsx
 │   │   │   ├── TaskDashboard
-│   │   │   │   └── TaskDashboard.test.tsx
 │   │   │   └── TaskDashboard.tsx
 │   │   ├── services
 │   │   │   └── commandService.ts
@@ -348,4 +264,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-75 directories, 274 files
+71 directories, 194 files
