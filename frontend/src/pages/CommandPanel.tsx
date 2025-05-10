@@ -10,6 +10,9 @@ const CommandPanel: React.FC = () => {
   const isDragging = useRef(false);
 
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  ); // 🆕
 
   const startDrag = (e: React.MouseEvent) => {
     isDragging.current = true;
@@ -44,6 +47,10 @@ const CommandPanel: React.FC = () => {
         <ProjectSidebar
           selectedChatId={selectedChatId}
           onSelectChat={(chatId) => setSelectedChatId(chatId)}
+          onSelectProject={(projectId) => {
+            setSelectedProjectId(projectId); // 🆕 track selected project
+            console.log("Selected Project:", projectId);
+          }}
         />
       </aside>
 
