@@ -39,7 +39,10 @@ const CommandPanel: React.FC = () => {
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-gray-50 text-gray-900">
       {/* Left Sidebar */}
       <aside className="w-64 border-r border-gray-300 bg-white shadow-inner px-4 py-6">
-        <ProjectSidebar />
+        <ProjectSidebar
+          selectedChatId={selectedChatId}
+          onSelectChat={(chatId) => setSelectedChatId(chatId)}
+        />
       </aside>
 
       {/* Main content column */}
