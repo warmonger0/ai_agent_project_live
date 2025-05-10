@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import ChatInput from "./ChatInput";
+import ChatInput from "./ChatInput"; // Ensure this path is correct
 
 describe("ChatInput", () => {
   it("renders input and button", () => {
@@ -9,7 +9,7 @@ describe("ChatInput", () => {
 
     render(
       <ChatInput
-        value="Hello"
+        input="Hello"
         onChange={mockChange}
         onSubmit={mockSubmit}
         disabled={false}
@@ -26,7 +26,7 @@ describe("ChatInput", () => {
 
     render(
       <ChatInput
-        value=""
+        input=""
         onChange={mockChange}
         onSubmit={mockSubmit}
         disabled={false}
@@ -44,7 +44,7 @@ describe("ChatInput", () => {
 
     render(
       <ChatInput
-        value="Hello"
+        input="Hello"
         onChange={mockChange}
         onSubmit={mockSubmit}
         disabled={false}
