@@ -60,6 +60,7 @@ class Chat(ChatBase):
 # --- Project Schemas ---
 class ProjectBase(BaseModel):
     name: str
+    understanding: Optional[str] = None  # ✅ support from creation
 
 class ProjectCreate(ProjectBase):
     pass
