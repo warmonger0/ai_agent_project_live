@@ -1,5 +1,5 @@
-import sendChatMessage from "../lib/sendChatMessage"; // ✅ default import
-import type { ChatRequest } from "../lib/sendChatMessage";
+import sendChatMessage from "./sendChatMessage"; // ✅ default import
+import type { ChatRequest } from "./sendChatMessage";
 
 // ✅ MOCK FETCH CLEANUP
 beforeEach(() => {
