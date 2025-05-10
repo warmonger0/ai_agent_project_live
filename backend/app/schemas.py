@@ -67,7 +67,7 @@ class ProjectCreate(ProjectBase):
 class Project(ProjectBase):
     id: int
     created_at: datetime
-    chats: List[Chat] = []
 
     class Config:
-        from_attributes = True  # replaced orm_mode
+        from_attributes = True
+
