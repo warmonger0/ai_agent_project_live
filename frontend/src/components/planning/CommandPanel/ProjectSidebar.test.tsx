@@ -7,7 +7,6 @@ beforeEach(() => {
   global.fetch = vi.fn((input: RequestInfo) => {
     const url = input.toString();
 
-    // Handle /projects
     if (url === "/api/v1/chat/projects") {
       return Promise.resolve({
         json: () =>
@@ -18,7 +17,6 @@ beforeEach(() => {
       }) as unknown as Response;
     }
 
-    // Handle /projects/:id/chats
     if (url === "/api/v1/chat/projects/1/chats") {
       return Promise.resolve({
         json: () =>
