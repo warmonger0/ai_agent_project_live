@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProjectSidebar from "./ProjectSidebar";
 
-// 👇 Mock fetch globally to intercept real network calls in the component
+// 🔧 Intercept internal fetch calls from useEffect in the component
 beforeEach(() => {
   global.fetch = vi.fn((input: RequestInfo) => {
     const url = input.toString();
@@ -44,8 +44,11 @@ describe("ProjectSidebar", () => {
     const select = screen.getByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
 
-    expect(await screen.findByText("Alpha Chat 1")).toBeInTheDocument();
-    expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
+    // Wait for both chat items to appear
+    await waitFor(() => {
+      expect(screen.getByText("Alpha Chat 1")).toBeInTheDocument();
+      expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
+    });
   });
 
   it("calls onSelectChat when a chat is clicked", async () => {
