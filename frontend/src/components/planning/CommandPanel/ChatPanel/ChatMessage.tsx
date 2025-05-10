@@ -73,14 +73,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        <ReactMarkdown
-          className="prose prose-sm max-w-full break-words whitespace-pre-wrap"
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeHighlight]}
-          components={components}
-        >
-          {message.content}
-        </ReactMarkdown>
+        <div className="prose prose-sm max-w-full break-words whitespace-pre-wrap">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+            components={components}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
