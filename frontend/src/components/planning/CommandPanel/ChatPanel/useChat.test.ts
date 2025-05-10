@@ -1,69 +1,54 @@
-describe("ComponentName", () => {
-  it("renders without crashing", () => {
-    expect(true).toBe(true);
-  });
-});
-// File: /frontend/src/__tests__/commandPanel/useChat.test.ts
-
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import useChat from "@/components/planning/CommandPanel/ChatPanel/useChat";
-import { sendChatMessage } from "@/components/planning/CommandPanel/ChatPanel/sendChatMessage";
-import type { ChatMessage } from "@/types";
+import { describe, it, expect, vi } from "vitest";
+import useChat from "./useChat"; // ✅ same folder
+import type { ChatRequest, ChatResponse } from "./sendChatMessage";
+import sendChatMessage from "./sendChatMessage"; // ✅ default import from same folder
 
-vi.mock("@/lib/sendChatMessage");
+vi.mock("./sendChatMessage", () => ({
+  default: vi.fn(),
+}));
 
 describe("useChat", () => {
-  const mockResponse = {
-    choices: [{ message: { role: "assistant", content: "Hi there!" } }],
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("initializes with empty messages and loading false", () => {
-    const { result } = renderHook(() => useChat());
+    const { result } = renderHook(() => useChat("1"));
+
     expect(result.current.messages).toEqual([]);
     expect(result.current.loading).toBe(false);
   });
 
   it("sends user message and receives assistant reply", async () => {
-    (
-      sendChatMessage as unknown as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce(mockResponse);
+    const mockResponse: ChatResponse = {
+      choices: [{ message: { role: "assistant", content: "Hello back!" } }],
+    };
 
-    const { result } = renderHook(() => useChat());
+    const mockFn = sendChatMessage as ReturnType<typeof vi.fn>;
+    mockFn.mockResolvedValueOnce(mockResponse);
+
+    const { result } = renderHook(() => useChat("2"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello");
+      await result.current.handleSend("Hi");
     });
 
-    expect(result.current.messages.length).toBe(2);
-    expect(result.current.messages[0]).toEqual({
-      role: "user",
-      content: "Hello",
-    });
+    expect(result.current.messages).toHaveLength(2);
+    expect(result.current.messages[0]).toEqual({ role: "user", content: "Hi" });
     expect(result.current.messages[1]).toEqual({
       role: "assistant",
-      content: "Hi there!",
+      content: "Hello back!",
     });
-    expect(result.current.loading).toBe(false);
   });
 
   it("sets error message on failed request", async () => {
-    (
-      sendChatMessage as unknown as ReturnType<typeof vi.fn>
-    ).mockRejectedValueOnce(new Error("Network error"));
+    const mockFn = sendChatMessage as ReturnType<typeof vi.fn>;
+    mockFn.mockRejectedValueOnce(new Error("Network error"));
 
-    const { result } = renderHook(() => useChat());
+    const { result } = renderHook(() => useChat("3"));
 
     await act(async () => {
-      await result.current.sendMessage("Fail test");
+      await result.current.handleSend("test");
     });
 
-    expect(result.current.messages.length).toBe(2);
-    expect(result.current.messages[1].content.toLowerCase()).toContain("error");
+    expect(result.current.error).toBe("Network error");
     expect(result.current.loading).toBe(false);
   });
 });
