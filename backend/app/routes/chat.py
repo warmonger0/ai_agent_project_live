@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
 
 from backend.app import crud, models, schemas
@@ -12,7 +13,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 # Project Endpoints
 @router.post("/projects/", response_model=schemas.Project)
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    return crud.create_project(db=db, name=project.name)
+    try:
+        return crud.create_project(db=db, name=project.name)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Project with this name already exists.")
 
 @router.get("/projects/", response_model=List[schemas.Project])
 def read_projects(db: Session = Depends(get_db)):
