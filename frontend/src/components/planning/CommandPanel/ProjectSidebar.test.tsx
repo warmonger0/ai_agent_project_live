@@ -1,11 +1,11 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProjectSidebar from "./ProjectSidebar";
 
 beforeEach(() => {
   global.fetch = vi.fn((input: RequestInfo) => {
     const url = input.toString();
-    console.log("[Mock fetch called]:", url); // ← trace calls
+    console.log("[Mock fetch called]:", url); // For debugging
 
     if (url === "/api/v1/chat/projects") {
       return Promise.resolve({
@@ -39,7 +39,13 @@ beforeEach(() => {
 
 describe("ProjectSidebar", () => {
   it("renders chats after selecting a project", async () => {
-    render(<ProjectSidebar selectedChatId={null} onSelectChat={() => {}} />);
+    render(
+      <ProjectSidebar
+        selectedChatId={null}
+        onSelectChat={() => {}}
+        onSelectProject={() => {}} // ✅ required now
+      />
+    );
 
     const select = await screen.findByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
@@ -55,7 +61,11 @@ describe("ProjectSidebar", () => {
     const onSelectChat = vi.fn();
 
     render(
-      <ProjectSidebar selectedChatId={null} onSelectChat={onSelectChat} />
+      <ProjectSidebar
+        selectedChatId={null}
+        onSelectChat={onSelectChat}
+        onSelectProject={() => {}} // ✅ required now
+      />
     );
 
     const select = await screen.findByLabelText(/select project/i);
