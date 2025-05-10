@@ -45,7 +45,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         );
       }
 
-      // Fix: avoid hydration errors by not putting <div> inside markdown <p>
       return (
         <div className="not-prose my-4">
           <div className="relative group">
@@ -65,6 +64,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         </div>
       );
     },
+
+    // Fix <p><div> hydration errors: unwrap paragraphs from block content
+    p({ children }) {
+      return <>{children}</>;
+    },
   };
 
   return (
@@ -74,7 +78,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        {/* Prose wrapper separated from ReactMarkdown to avoid prop error */}
+        {/* This container can keep prose, but ReactMarkdown itself cannot receive className */}
         <div className="prose prose-sm max-w-full break-words whitespace-pre-wrap">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
