@@ -9,8 +9,7 @@ vi.mock("./sendChatMessage", () => ({
 
 describe("useChat", () => {
   it("initializes with empty messages and loading false", () => {
-    const { result } = renderHook(() => useChat("1"));
-
+    const { result } = renderHook(() => useChat()); // ✅
     expect(result.current.messages).toEqual([]);
     expect(result.current.loading).toBe(false);
   });
