@@ -1,7 +1,10 @@
+// File: /frontend/src/components/planning/CommandPanel/ProjectSidebar.test.tsx
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import ProjectSidebar from "./ProjectSidebar";
 
+// Mock data for projects and chats
 const mockProjects = [
   {
     id: 1,
@@ -18,6 +21,7 @@ const mockProjects = [
   },
 ];
 
+// Mock the useProjects hook
 vi.mock("@/hooks/useProjects", () => ({
   default: () => ({
     projects: mockProjects,
@@ -27,7 +31,7 @@ vi.mock("@/hooks/useProjects", () => ({
 }));
 
 describe("ProjectSidebar", () => {
-  it("renders projects and chats upon selection", () => {
+  it("renders list of projects and chats", () => {
     render(
       <ProjectSidebar
         selectedChatId={null}
@@ -36,11 +40,14 @@ describe("ProjectSidebar", () => {
       />
     );
 
-    // Select 'Project Alpha' from the dropdown
-    const selectElement = screen.getByLabelText("Select Project");
-    fireEvent.change(selectElement, { target: { value: "1" } });
+    // Verify the project select dropdown is present
+    const projectSelect = screen.getByLabelText("Select Project");
+    expect(projectSelect).toBeInTheDocument();
 
-    // Verify that chats for 'Project Alpha' are displayed
+    // Select "Project Alpha"
+    fireEvent.change(projectSelect, { target: { value: "1" } });
+
+    // Verify chats for "Project Alpha" are displayed
     expect(screen.getByText("Alpha Chat 1")).toBeInTheDocument();
     expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
   });
@@ -56,15 +63,15 @@ describe("ProjectSidebar", () => {
       />
     );
 
-    // Select 'Project Alpha' to display its chats
-    const selectElement = screen.getByLabelText("Select Project");
-    fireEvent.change(selectElement, { target: { value: "1" } });
+    // Select "Project Alpha"
+    const projectSelect = screen.getByLabelText("Select Project");
+    fireEvent.change(projectSelect, { target: { value: "1" } });
 
-    // Click on 'Alpha Chat 2'
+    // Click on "Alpha Chat 2"
     const chatItem = screen.getByText("Alpha Chat 2");
     fireEvent.click(chatItem);
 
-    // Verify that onSelectChat is called with 'chat-2'
+    // Verify onSelectChat is called with correct chat ID
     expect(onSelectChat).toHaveBeenCalledWith("chat-2");
   });
 
@@ -79,11 +86,11 @@ describe("ProjectSidebar", () => {
       />
     );
 
-    // Select 'Project Beta' from the dropdown
-    const selectElement = screen.getByLabelText("Select Project");
-    fireEvent.change(selectElement, { target: { value: "2" } });
+    // Select "Project Beta"
+    const projectSelect = screen.getByLabelText("Select Project");
+    fireEvent.change(projectSelect, { target: { value: "2" } });
 
-    // Verify that onSelectProject is called with 2
+    // Verify onSelectProject is called with correct project ID
     expect(onSelectProject).toHaveBeenCalledWith(2);
   });
 });
