@@ -7,7 +7,6 @@ from typing import List
 from backend.app import crud, models, schemas
 from backend.app.db.session import get_db
 
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 # Project Endpoints
