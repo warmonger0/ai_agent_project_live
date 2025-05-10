@@ -1,10 +1,14 @@
 import { renderHook, act } from "@testing-library/react";
 import axios from "axios";
 import usePersistentChat from "./usePersistentChat";
+import type { MockInstance } from "vitest";
+const mockedAxios = axios as unknown as {
+  get: MockInstance;
+  post: MockInstance;
+};
 
 // Mock axios
 vi.mock("axios");
-const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe("usePersistentChat", () => {
   const mockChatId = "abc123";
