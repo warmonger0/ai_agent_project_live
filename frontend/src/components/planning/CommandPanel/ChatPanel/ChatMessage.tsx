@@ -49,7 +49,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         <div className="not-prose my-2">
           <div className="relative group">
             <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
-              <CopyButton text={codeContent} />
+              <CopyButton text={codeContent || ""} />
               <button
                 onClick={() => handleEdit(codeContent)}
                 className="hover:underline"
@@ -77,7 +77,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight]}
-            components={components as any} // workaround for TS error
+            components={components}
           >
             {message.content}
           </ReactMarkdown>
