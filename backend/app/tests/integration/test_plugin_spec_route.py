@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from fastapi.testclient import TestClient
 from backend.app.main import app
-import app.plugins.loader as loader  # 👈 needed for monkeypatch
+import backend.app.plugins.loader as loader  # 👈 needed for monkeypatch
 
 client = TestClient(app)
 
@@ -32,7 +32,7 @@ def test_plugin_spec_missing_input_spec(monkeypatch):
     def fake_loader(name):
         return NoSpecPlugin
 
-    import app.controllers.plugin_controller as plugin_controller
+    import backend.app.controllers.plugin_controller as plugin_controller
     monkeypatch.setattr(plugin_controller, "load_plugin_class", fake_loader)
 
     response = client.get("/api/v1/plugins/anything/spec")

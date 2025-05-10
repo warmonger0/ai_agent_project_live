@@ -72,3 +72,5 @@ class Project(ProjectBase):
     class Config:
         from_attributes = True
 
+class ProjectUpdate(BaseModel):
+    understanding: Optional[str] = None

@@ -6,12 +6,12 @@ from typing import Dict, Any
 import traceback
 import json
 
-from app.db.session import get_db
-from app.db.tasks import add_memory_entry
-from app.plugins.loader import discover_plugins, load_plugin_class
-from app.plugins.runner import run_plugin_job
-from app.models import PluginExecution
-from app.core.api_response import success_response
+from backend.app.db.session import get_db
+from backend.app.db.tasks import add_memory_entry
+from backend.app.plugins.loader import discover_plugins, load_plugin_class
+from backend.app.plugins.runner import run_plugin_job
+from backend.app.models import PluginExecution
+from backend.app.core.api_response import success_response
 
 router = APIRouter()
 

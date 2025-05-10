@@ -24,20 +24,25 @@ def read_projects(db: Session = Depends(get_db)):
 
 @router.get("/projects/{project_id}", response_model=schemas.Project)
 def read_project(project_id: int, db: Session = Depends(get_db)):
-    db_project = db.query(models.Project).options(selectinload(models.Project.chats)).filter(models.Project.id == project_id).first()
+    db_project = db.query(models.Project)\
+        .options(selectinload(models.Project.chats))\
+        .filter(models.Project.id == project_id).first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return db_project
 
-@router.put("/projects/{project_id}/understanding", response_model=schemas.Project)
-def update_project_understanding(project_id: int, payload: dict, db: Session = Depends(get_db)):
-    new_text = payload.get("understanding")
-    if not isinstance(new_text, str):
-        raise HTTPException(status_code=400, detail="Missing or invalid 'understanding'")
-    updated = crud.update_project_understanding(db, project_id, new_text)
-    if not updated:
+@router.patch("/projects/{project_id}", response_model=schemas.Project)
+def update_project(project_id: int, update: schemas.ProjectUpdate, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db=db, project_id=project_id)
+    if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
-    return updated
+    
+    if update.understanding is not None:
+        db_project.understanding = update.understanding
+    
+    db.commit()
+    db.refresh(db_project)
+    return db_project
 
 # ──────────────── Chat Endpoints ────────────────
 
