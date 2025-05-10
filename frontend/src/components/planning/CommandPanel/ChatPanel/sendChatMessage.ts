@@ -12,11 +12,11 @@ export interface ChatResponse {
   choices: { message: ChatMessage }[];
 }
 
-export async function sendChatMessage(
+const sendChatMessage = async (
   payload: ChatRequest,
   baseUrlOverride?: string,
   onStreamChunk?: (chunk: string) => void
-): Promise<ChatResponse> {
+): Promise<ChatResponse> => {
   const API_BASE_URL = baseUrlOverride ?? import.meta.env.VITE_API_BASE_URL;
 
   if (!API_BASE_URL || API_BASE_URL === "__MISSING__") {
@@ -79,4 +79,6 @@ export async function sendChatMessage(
   return {
     choices: [{ message: { role: "assistant", content: fullText } }],
   };
-}
+};
+
+export default sendChatMessage;
