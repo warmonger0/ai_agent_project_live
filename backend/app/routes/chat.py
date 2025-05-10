@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError
 from typing import List
 
@@ -20,7 +20,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
 
 @router.get("/projects/", response_model=List[schemas.Project])
 def read_projects(db: Session = Depends(get_db)):
-    return crud.get_all_projects(db=db)
+    return db.query(models.Project).options(selectinload(models.Project.chats)).all()
 
 @router.get("/projects/{project_id}", response_model=schemas.Project)
 def read_project(project_id: int, db: Session = Depends(get_db)):
@@ -34,7 +34,6 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
 
 @router.post("/projects/{project_id}/chats/", response_model=schemas.Chat)
 def create_chat(project_id: int, chat: schemas.ChatCreate, db: Session = Depends(get_db)):
-    # Validate project exists
     if not crud.get_project(db=db, project_id=project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     return crud.create_chat(db=db, project_id=project_id, title=chat.title)
@@ -57,7 +56,6 @@ def read_chat(chat_id: int, db: Session = Depends(get_db)):
 
 @router.post("/chats/{chat_id}/messages/", response_model=schemas.ChatMessage)
 def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
-    # Optional: Validate chat existence
     if not crud.get_chat(db=db, chat_id=chat_id):
         raise HTTPException(status_code=404, detail="Chat not found")
     return crud.create_chat_message(db=db, chat_id=chat_id, role=message.role, content=message.content)
