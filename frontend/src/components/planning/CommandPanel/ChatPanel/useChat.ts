@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { sendChatMessage } from "./sendChatMessage";
+import sendChatMessage from "./sendChatMessage"; // ✅ Correct import
 import type { ChatMessage } from "./types";
 
 const STORAGE_KEY = "chatMessages";
@@ -27,7 +27,6 @@ export function useChat() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
-  // Handle chat message submission
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -71,7 +70,6 @@ export function useChat() {
     }
   };
 
-  // 🧼 New: clear chat history
   const clearMessages = () => {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEY);
@@ -83,6 +81,6 @@ export function useChat() {
     setInput,
     loading,
     handleSend,
-    clearMessages, // <-- exposed to ChatPanel
+    clearMessages,
   };
 }
