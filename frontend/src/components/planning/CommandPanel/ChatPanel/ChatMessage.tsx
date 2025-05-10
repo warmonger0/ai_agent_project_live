@@ -48,16 +48,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       return (
         <div className="not-prose my-2">
           <div className="relative group">
+            <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
+              <CopyButton text={codeContent} />
+              <button
+                onClick={() => handleEdit(codeContent)}
+                className="hover:underline"
+              >
+                Edit
+              </button>
+            </div>
             <pre className="bg-gray-800 text-white rounded-md p-4 text-sm break-words whitespace-pre-wrap overflow-auto max-w-full">
-              <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
-                <CopyButton text={codeContent} />
-                <button
-                  onClick={() => handleEdit(codeContent)}
-                  className="hover:underline"
-                >
-                  Edit
-                </button>
-              </div>
               <code>{codeContent}</code>
             </pre>
           </div>
@@ -73,14 +73,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        <ReactMarkdown
-          className="prose prose-sm max-w-full break-words whitespace-pre-wrap"
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeHighlight]}
-          components={components}
-        >
-          {message.content}
-        </ReactMarkdown>
+        <div className="prose prose-sm max-w-full break-words whitespace-pre-wrap">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+            components={components as any} // workaround for TS error
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
