@@ -6,20 +6,20 @@ from alembic import context
 import os
 import sys
 
-# Ensure the `app` directory is in the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))
+# ✅ Ensure root-level `app` is importable
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-# Import Base metadata
+# ✅ Import Base metadata from app
 from app.models import Base
 
 # Alembic Config object
 config = context.config
 
-# Setup logging
+# Logging setup
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Tell Alembic which metadata to use for autogeneration
+# Alembic metadata target
 target_metadata = Base.metadata
 
 
@@ -38,7 +38,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode with a DB connection."""
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
