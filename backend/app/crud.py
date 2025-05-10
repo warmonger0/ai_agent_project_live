@@ -66,6 +66,6 @@ def get_messages_for_chat(db: Session, chat_id: int) -> list[models.ChatMessage]
     return (
         db.query(models.ChatMessage)
         .filter(models.ChatMessage.chat_id == chat_id)
-        .order_by(models.ChatMessage.timestamp)
+        .order_by(models.ChatMessage.created_at)
         .all()
     )
