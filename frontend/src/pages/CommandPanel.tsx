@@ -54,7 +54,7 @@ const CommandPanel: React.FC = () => {
           style={{ height: `${topHeight}%` }}
           className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden"
         >
-          <ChatPanel />
+          <ChatPanel chatId={selectedChatId} />
         </div>
 
         {/* Drag handle */}
