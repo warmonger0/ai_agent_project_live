@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app import crud, models, schemas
+from backend.app import crud, models, schemas
 from app.db.session import get_db
 
 router = APIRouter(prefix="/chat", tags=["chat"])
