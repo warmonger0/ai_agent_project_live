@@ -9,7 +9,7 @@ vi.mock("./sendChatMessage", () => ({
 
 describe("useChat", () => {
   it("initializes with empty messages and loading false", () => {
-    const { result } = renderHook(() => useChat()); // ✅
+    const { result } = renderHook(() => useChat());
     expect(result.current.messages).toEqual([]);
     expect(result.current.loading).toBe(false);
   });
@@ -22,7 +22,7 @@ describe("useChat", () => {
     const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
     mockFn.mockResolvedValueOnce(mockResponse);
 
-    const { result } = renderHook(() => useChat("2"));
+    const { result } = renderHook(() => useChat());
 
     await act(async () => {
       await result.current.handleSend("Hi");
@@ -40,7 +40,7 @@ describe("useChat", () => {
     const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
     mockFn.mockRejectedValueOnce(new Error("Network error"));
 
-    const { result } = renderHook(() => useChat("3"));
+    const { result } = renderHook(() => useChat());
 
     await act(async () => {
       await result.current.handleSend("test");
