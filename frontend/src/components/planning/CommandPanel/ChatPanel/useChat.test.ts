@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import useChat from "./useChat"; // ✅ Correct: default import
+import { useChat } from "./useChat"; // ✅ correct
+
 import sendChatMessage from "./sendChatMessage"; // ✅ default import
 
 vi.mock("./sendChatMessage"); // ✅ mock default export directly
