@@ -1,11 +1,22 @@
 import React, { useEffect, useRef } from "react";
 import ChatInput, { ChatInputRef } from "./ChatPanel/ChatInput";
 import ChatMessageList from "./ChatPanel/ChatMessageList";
-import { useChat } from "./ChatPanel/useChat";
+import usePersistentChat from "@/hooks/usePersistentChat";
 
-const ChatPanel: React.FC = () => {
-  const { messages, input, setInput, loading, handleSend, clearMessages } =
-    useChat();
+interface ChatPanelProps {
+  chatId: string | null;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({ chatId }) => {
+  const {
+    messages,
+    input,
+    setInput,
+    loading,
+    error,
+    handleSend,
+    clearMessages,
+  } = usePersistentChat(chatId);
 
   const inputRef = useRef<ChatInputRef>(null);
 
@@ -28,6 +39,11 @@ const ChatPanel: React.FC = () => {
         </button>
       </div>
 
+      {/* Optional error display */}
+      {error && (
+        <div className="px-4 py-2 text-sm text-red-600 bg-red-100">{error}</div>
+      )}
+
       {/* Message list */}
       <ChatMessageList messages={messages} loading={loading} />
 
@@ -38,7 +54,7 @@ const ChatPanel: React.FC = () => {
           value={input}
           onChange={setInput}
           onSend={handleSend}
-          disabled={loading}
+          disabled={loading || !chatId}
         />
       </div>
     </div>
