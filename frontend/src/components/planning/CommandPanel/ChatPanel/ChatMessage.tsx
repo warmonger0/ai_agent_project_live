@@ -16,7 +16,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     console.log("📝 Edit clicked:", code);
   };
 
-  // Custom renderer for inline and block code
   const components = {
     code({
       inline,
@@ -30,11 +29,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         : children;
 
       if (inline) {
-        return <code className="bg-gray-100 px-1 rounded">{codeContent}</code>;
+        return (
+          <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">
+            {codeContent}
+          </code>
+        );
       }
 
       return (
         <div className="relative group">
+          {/* Floating actions */}
           <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
             <button
               onClick={() => navigator.clipboard.writeText(codeContent)}
@@ -49,7 +53,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               Edit
             </button>
           </div>
-          <pre className="overflow-x-auto">
+          <pre className="bg-gray-800 text-white rounded-md p-4 overflow-x-auto text-sm">
             <code>{codeContent}</code>
           </pre>
         </div>
