@@ -3,17 +3,9 @@ import { vi } from "vitest";
 import axios from "axios";
 import usePersistentChat from "./usePersistentChat";
 
-// Mock axios
+// Mock axios and get typed instance
 vi.mock("axios");
-
-// Manually define mocks for get/post
-const mockedAxios = axios as unknown as {
-  get: ReturnType<typeof vi.fn>;
-  post: ReturnType<typeof vi.fn>;
-};
-
-mockedAxios.get = vi.fn();
-mockedAxios.post = vi.fn();
+const mockedAxios = vi.mocked(axios);
 
 describe("usePersistentChat", () => {
   const mockChatId = "abc123";
@@ -32,34 +24,30 @@ describe("usePersistentChat", () => {
 
     const { result } = renderHook(() => usePersistentChat(mockChatId));
 
-    // Wait for fetch to resolve
     await act(async () => {});
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       `/api/v1/chat/chats/${mockChatId}/messages/`
     );
-
     expect(result.current.messages).toEqual(sampleMessages);
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
   it("handles message sending", async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: [] }); // prevent undefined error
     mockedAxios.post.mockResolvedValueOnce({
       data: { id: "3", role: "assistant", content: "Got it." },
     });
 
     const { result } = renderHook(() => usePersistentChat(mockChatId));
 
-    // Wait for initial fetch
-    await act(async () => {});
+    await act(async () => {}); // wait for initial fetch
 
-    // Simulate input
     act(() => {
       result.current.setInput("Hey");
     });
 
-    // Submit message
     await act(async () => {
       await result.current.handleSend();
     });
