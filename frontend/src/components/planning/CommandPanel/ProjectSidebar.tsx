@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-// Inlined types to fix missing module error
-
+// Types
 type Chat = {
   id: number;
   title: string;
@@ -10,28 +9,31 @@ type Chat = {
 type Project = {
   id: number;
   name: string;
-  chats: Chat[];
 };
 
 interface ProjectSidebarProps {
-  onSelectChat: (chatId: number) => void;
   selectedChatId: number | null;
+  onSelectChat: (chatId: number) => void;
+  onSelectProject: (projectId: number) => void; // ✅ ADDED
 }
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
-  onSelectChat,
   selectedChatId,
+  onSelectChat,
+  onSelectProject, // ✅ RECEIVED
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
 
+  // Fetch all projects on mount
   useEffect(() => {
     fetch("/api/v1/chat/projects")
       .then((res) => res.json())
       .then(setProjects);
   }, []);
 
+  // Fetch chats when a project is selected
   useEffect(() => {
     if (selectedProject) {
       fetch(`/api/v1/chat/projects/${selectedProject.id}/chats`)
@@ -57,6 +59,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           const id = parseInt(e.target.value, 10);
           const proj = projects.find((p) => p.id === id) || null;
           setSelectedProject(proj);
+          onSelectProject(id); // ✅ EMIT UPWARD
         }}
         value={selectedProject?.id || ""}
       >
