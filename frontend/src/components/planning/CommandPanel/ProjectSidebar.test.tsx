@@ -2,10 +2,10 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProjectSidebar from "./ProjectSidebar";
 
-// 🔧 Intercept internal fetch calls from useEffect in the component
 beforeEach(() => {
   global.fetch = vi.fn((input: RequestInfo) => {
     const url = input.toString();
+    console.log("[Mock fetch called]:", url); // ← trace calls
 
     if (url === "/api/v1/chat/projects") {
       return Promise.resolve({
@@ -33,7 +33,7 @@ beforeEach(() => {
       }) as unknown as Response;
     }
 
-    return Promise.reject(new Error("Unhandled fetch URL: " + url));
+    throw new Error("❌ Unhandled fetch URL: " + url);
   }) as unknown as typeof fetch;
 });
 
@@ -41,14 +41,14 @@ describe("ProjectSidebar", () => {
   it("renders chats after selecting a project", async () => {
     render(<ProjectSidebar selectedChatId={null} onSelectChat={() => {}} />);
 
-    const select = screen.getByLabelText(/select project/i);
+    const select = await screen.findByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
 
-    // Wait for both chat items to appear
-    await waitFor(() => {
-      expect(screen.getByText("Alpha Chat 1")).toBeInTheDocument();
-      expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
-    });
+    const chats = await screen.findAllByRole("button", { name: /Alpha Chat/i });
+    expect(chats.map((el) => el.textContent)).toEqual([
+      "Alpha Chat 1",
+      "Alpha Chat 2",
+    ]);
   });
 
   it("calls onSelectChat when a chat is clicked", async () => {
@@ -58,11 +58,13 @@ describe("ProjectSidebar", () => {
       <ProjectSidebar selectedChatId={null} onSelectChat={onSelectChat} />
     );
 
-    const select = screen.getByLabelText(/select project/i);
+    const select = await screen.findByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
 
-    const chatItem = await screen.findByText("Alpha Chat 2");
-    fireEvent.click(chatItem);
+    const chatButton = await screen.findByRole("button", {
+      name: "Alpha Chat 2",
+    });
+    fireEvent.click(chatButton);
 
     expect(onSelectChat).toHaveBeenCalledWith(102);
   });
