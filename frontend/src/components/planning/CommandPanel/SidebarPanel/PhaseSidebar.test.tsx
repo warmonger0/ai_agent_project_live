@@ -1,12 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import Sidebar from '../../components/planning/Sidebar';
+import { render, screen } from "@testing-library/react";
+import PhaseSidebar from "./PhaseSidebar";
 
-describe('Sidebar', () => {
-  it('displays all phases', () => {
-    render(<Sidebar />);
-    expect(screen.getByText(/Phase 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 2/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 4/i)).toBeInTheDocument();
+describe("PhaseSidebar", () => {
+  it("renders all four phases with correct labels", () => {
+    render(<PhaseSidebar />);
+
+    expect(screen.getByText("Phase 1: Planning")).toBeInTheDocument();
+    expect(screen.getByText("Phase 2: Scaffolding")).toBeInTheDocument();
+    expect(screen.getByText("Phase 3: Implementation")).toBeInTheDocument();
+    expect(screen.getByText("Phase 4: Review & Iteration")).toBeInTheDocument();
   });
 });
