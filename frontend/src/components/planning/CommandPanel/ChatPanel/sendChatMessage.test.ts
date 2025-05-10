@@ -1,5 +1,11 @@
-import { sendChatMessage } from "../lib/sendChatMessage";
+import sendChatMessage from "../lib/sendChatMessage"; // ✅ default import
 import type { ChatRequest } from "../lib/sendChatMessage";
+
+// ✅ MOCK FETCH CLEANUP
+beforeEach(() => {
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
 
 it("should throw an error if the response is not ok", async () => {
   global.fetch = vi.fn(() =>
@@ -24,14 +30,12 @@ it("should throw if VITE_API_BASE_URL is undefined", async () => {
     messages: [{ role: "user", content: "Missing env" }],
   };
 
-  // Simulate undefined config — and stub fetch to prove it's not called
   const spy = vi.spyOn(global, "fetch");
 
   await expect(sendChatMessage(mockRequest, "__MISSING__")).rejects.toThrow(
     "VITE_API_BASE_URL is not defined"
   );
 
-  // Ensure fetch was NOT called
   expect(spy).not.toHaveBeenCalled();
 });
 
