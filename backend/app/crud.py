@@ -1,6 +1,4 @@
-# File: backend/app/crud.py
-
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from datetime import datetime
 
 from backend.app import models, schemas
@@ -33,7 +31,12 @@ def create_chat(db: Session, project_id: int, title: str | None = None) -> model
 
 
 def get_chat(db: Session, chat_id: int) -> models.Chat | None:
-    return db.query(models.Chat).filter(models.Chat.id == chat_id).first()
+    return (
+        db.query(models.Chat)
+        .options(selectinload(models.Chat.messages))  # ✅ Preload messages
+        .filter(models.Chat.id == chat_id)
+        .first()
+    )
 
 
 def get_chats_for_project(db: Session, project_id: int) -> list[models.Chat]:
