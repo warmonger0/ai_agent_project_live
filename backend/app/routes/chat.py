@@ -29,6 +29,16 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
     return db_project
 
+@router.put("/projects/{project_id}/understanding", response_model=schemas.Project)
+def update_project_understanding(project_id: int, payload: dict, db: Session = Depends(get_db)):
+    new_text = payload.get("understanding")
+    if not isinstance(new_text, str):
+        raise HTTPException(status_code=400, detail="Missing or invalid 'understanding'")
+    updated = crud.update_project_understanding(db, project_id, new_text)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
 # ──────────────── Chat Endpoints ────────────────
 
 @router.post("/projects/{project_id}/chats/", response_model=schemas.Chat)
