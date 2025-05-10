@@ -66,7 +66,7 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    title = Column(String, nullable=False)  # ✅ renamed from 'name' to 'title'
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -79,8 +79,8 @@ class ChatMessage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
-    role = Column(String, nullable=False)  # user or assistant
+    role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)  # ✅ required for ordering
 
     chat = relationship("Chat", back_populates="messages")
