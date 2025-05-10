@@ -6,11 +6,14 @@ import usePersistentChat from "./usePersistentChat";
 // Mock axios
 vi.mock("axios");
 
-// Partial mock of only the used methods
+// Manually define mocks for get/post
 const mockedAxios = axios as unknown as {
   get: ReturnType<typeof vi.fn>;
   post: ReturnType<typeof vi.fn>;
 };
+
+mockedAxios.get = vi.fn();
+mockedAxios.post = vi.fn();
 
 describe("usePersistentChat", () => {
   const mockChatId = "abc123";
