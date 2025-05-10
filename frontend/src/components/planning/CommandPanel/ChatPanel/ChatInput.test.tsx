@@ -1,4 +1,4 @@
-t; // File: /frontend/src/__tests__/commandPanel/ChatInput.test.tsx
+// File: ChatInput.test.tsx
 
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
@@ -24,37 +24,79 @@ describe("ChatInput", () => {
 
   it("calls onChange when input is typed in", () => {
     const mockChange = vi.fn();
-    const mockSubmit = vi.fn();
 
     render(
       <ChatInput
         input=""
         onChange={mockChange}
-        onSubmit={mockSubmit}
+        onSubmit={() => {}}
         disabled={false}
       />
     );
 
-    const inputField = screen.getByPlaceholderText(/ask the agent/i);
-    fireEvent.change(inputField, { target: { value: "test" } });
-    expect(mockChange).toHaveBeenCalled();
+    const input = screen.getByPlaceholderText(/ask the agent/i);
+    fireEvent.change(input, { target: { value: "Test" } });
+
+    expect(mockChange).toHaveBeenCalledWith("Test");
   });
 
   it("calls onSubmit when send button is clicked", () => {
-    const mockChange = vi.fn();
     const mockSubmit = vi.fn();
 
     render(
       <ChatInput
         input="Hello"
-        onChange={mockChange}
+        onChange={() => {}}
         onSubmit={mockSubmit}
         disabled={false}
       />
     );
 
-    const button = screen.getByRole("button", { name: /send/i });
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(mockSubmit).toHaveBeenCalled();
+  });
+
+  it("calls onSubmit when Enter key is pressed", () => {
+    const mockSubmit = vi.fn();
+
+    render(
+      <ChatInput
+        input="Do it"
+        onChange={() => {}}
+        onSubmit={mockSubmit}
+        disabled={false}
+      />
+    );
+
+    const input = screen.getByPlaceholderText(/ask the agent/i);
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 });
+
+    expect(mockSubmit).toHaveBeenCalled();
+  });
+
+  it("does not allow interaction when disabled", () => {
+    const mockSubmit = vi.fn();
+    const mockChange = vi.fn();
+
+    render(
+      <ChatInput
+        input="Disabled"
+        onChange={mockChange}
+        onSubmit={mockSubmit}
+        disabled={true}
+      />
+    );
+
+    const input = screen.getByPlaceholderText(/ask the agent/i);
+    const button = screen.getByRole("button", { name: /send/i });
+
+    fireEvent.change(input, { target: { value: "should not fire" } });
+    fireEvent.click(button);
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(mockChange).not.toHaveBeenCalled();
+    expect(mockSubmit).not.toHaveBeenCalled();
+    expect(input).toBeDisabled();
+    expect(button).toBeDisabled();
   });
 });
