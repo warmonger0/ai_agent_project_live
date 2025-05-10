@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app import models, schemas
+from backend.app import models, schemas
 
 
 # --- Projects ---
