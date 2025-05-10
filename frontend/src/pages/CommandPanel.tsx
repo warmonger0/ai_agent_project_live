@@ -9,6 +9,8 @@ const CommandPanel: React.FC = () => {
   const [topHeight, setTopHeight] = useState(60); // in %
   const isDragging = useRef(false);
 
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+
   const startDrag = (e: React.MouseEvent) => {
     isDragging.current = true;
     const startY = e.clientY;
