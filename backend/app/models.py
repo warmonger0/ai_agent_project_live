@@ -59,19 +59,30 @@ class Project(Base):
     name = Column(String, unique=True, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    chats = relationship("Chat", back_populates="project", cascade="all, delete-orphan")
+    chats = relationship(
+        "Chat",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="selectin",  # ✅ optimized lazy loading for ORM joins
+    )
 
 # --- Chat Model ---
 class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)  # ✅ renamed from 'name' to 'title'
+    title = Column(String, nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     project = relationship("Project", back_populates="chats")
-    messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan")
+    messages = relationship(
+        "ChatMessage",
+        back_populates="chat",
+        cascade="all, delete-orphan",
+        lazy="selectin",  # ✅ same pattern for nested chat→messages
+    )
+
 
 # --- Chat Message Model ---
 class ChatMessage(Base):
