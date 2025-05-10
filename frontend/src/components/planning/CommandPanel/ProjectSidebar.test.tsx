@@ -2,39 +2,50 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProjectSidebar from "./ProjectSidebar";
 
-// 👇 Ensure fetch is mocked globally to intercept internal useProjects() calls
+// 👇 Mock fetch globally to intercept real network calls in the component
 beforeEach(() => {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({
-      json: () =>
-        Promise.resolve([
-          {
-            id: 1,
-            title: "Project Alpha",
-            chats: [
-              { id: "chat-1", title: "Alpha Chat 1" },
-              { id: "chat-2", title: "Alpha Chat 2" },
-            ],
-          },
-          {
-            id: 2,
-            title: "Project Beta",
-            chats: [{ id: "chat-3", title: "Beta Chat 1" }],
-          },
-        ]),
-    })
-  ) as unknown as typeof fetch;
+  global.fetch = vi.fn((input: RequestInfo) => {
+    const url = input.toString();
+
+    // Handle /projects
+    if (url === "/api/v1/chat/projects") {
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve([
+            { id: 1, name: "Project Alpha" },
+            { id: 2, name: "Project Beta" },
+          ]),
+      }) as unknown as Response;
+    }
+
+    // Handle /projects/:id/chats
+    if (url === "/api/v1/chat/projects/1/chats") {
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve([
+            { id: 101, title: "Alpha Chat 1" },
+            { id: 102, title: "Alpha Chat 2" },
+          ]),
+      }) as unknown as Response;
+    }
+
+    if (url === "/api/v1/chat/projects/2/chats") {
+      return Promise.resolve({
+        json: () => Promise.resolve([{ id: 201, title: "Beta Chat 1" }]),
+      }) as unknown as Response;
+    }
+
+    return Promise.reject(new Error("Unhandled fetch URL: " + url));
+  }) as unknown as typeof fetch;
 });
 
 describe("ProjectSidebar", () => {
   it("renders chats after selecting a project", async () => {
     render(<ProjectSidebar selectedChatId={null} onSelectChat={() => {}} />);
 
-    // Select "Project Alpha"
     const select = screen.getByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
 
-    // Chats should now be visible
     expect(await screen.findByText("Alpha Chat 1")).toBeInTheDocument();
     expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
   });
@@ -46,14 +57,12 @@ describe("ProjectSidebar", () => {
       <ProjectSidebar selectedChatId={null} onSelectChat={onSelectChat} />
     );
 
-    // Select "Project Alpha" first
     const select = screen.getByLabelText(/select project/i);
     fireEvent.change(select, { target: { value: "1" } });
 
-    // Click on "Alpha Chat 2"
     const chatItem = await screen.findByText("Alpha Chat 2");
     fireEvent.click(chatItem);
 
-    expect(onSelectChat).toHaveBeenCalledWith("chat-2");
+    expect(onSelectChat).toHaveBeenCalledWith(102);
   });
 });
