@@ -23,12 +23,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     if (typeof node === "string") return node;
     if (Array.isArray(node)) return node.map(extractText).join("");
 
-    if (
-      React.isValidElement(node) &&
-      typeof node.props === "object" &&
-      node.props?.children
-    ) {
-      return extractText(node.props.children);
+    if (React.isValidElement(node)) {
+      const el = node as React.ReactElement<{ children?: React.ReactNode }>;
+      if (el.props.children) {
+        return extractText(el.props.children);
+      }
     }
 
     return "";
