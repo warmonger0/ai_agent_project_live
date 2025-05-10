@@ -19,6 +19,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     console.log("📝 Edit clicked:", code);
   };
 
+  const extractText = (node: React.ReactNode): string => {
+    if (typeof node === "string") return node;
+    if (Array.isArray(node)) return node.map(extractText).join("");
+    if (React.isValidElement(node) && node.props?.children) {
+      return extractText(node.props.children);
+    }
+    return "";
+  };
+
   const components = {
     code({
       inline,
@@ -27,15 +36,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       inline?: boolean;
       children: React.ReactNode;
     }) {
-      // Normalize to string content
-      let codeContent = "";
-      if (Array.isArray(children)) {
-        codeContent = children
-          .map((child) => (typeof child === "string" ? child : ""))
-          .join("");
-      } else if (typeof children === "string") {
-        codeContent = children;
-      }
+      const codeContent = extractText(children);
 
       if (inline) {
         return (
