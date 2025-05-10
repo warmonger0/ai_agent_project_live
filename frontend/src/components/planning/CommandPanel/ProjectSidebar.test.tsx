@@ -27,14 +27,20 @@ vi.mock("@/hooks/useProjects", () => ({
 }));
 
 describe("ProjectSidebar", () => {
-  it("renders chat list when a project is selected", () => {
-    render(<ProjectSidebar selectedChatId={null} onSelectChat={() => {}} />);
+  it("renders projects and chats upon selection", () => {
+    render(
+      <ProjectSidebar
+        selectedChatId={null}
+        onSelectChat={() => {}}
+        onSelectProject={() => {}}
+      />
+    );
 
-    // Simulate selecting "Project Alpha"
-    fireEvent.change(screen.getByLabelText(/select project/i), {
-      target: { value: "1" },
-    });
+    // Select 'Project Alpha' from the dropdown
+    const selectElement = screen.getByLabelText("Select Project");
+    fireEvent.change(selectElement, { target: { value: "1" } });
 
+    // Verify that chats for 'Project Alpha' are displayed
     expect(screen.getByText("Alpha Chat 1")).toBeInTheDocument();
     expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
   });
@@ -43,14 +49,41 @@ describe("ProjectSidebar", () => {
     const onSelectChat = vi.fn();
 
     render(
-      <ProjectSidebar selectedChatId={null} onSelectChat={onSelectChat} />
+      <ProjectSidebar
+        selectedChatId={null}
+        onSelectChat={onSelectChat}
+        onSelectProject={() => {}}
+      />
     );
 
-    fireEvent.change(screen.getByLabelText(/select project/i), {
-      target: { value: "1" },
-    });
+    // Select 'Project Alpha' to display its chats
+    const selectElement = screen.getByLabelText("Select Project");
+    fireEvent.change(selectElement, { target: { value: "1" } });
 
-    fireEvent.click(screen.getByText("Alpha Chat 2"));
+    // Click on 'Alpha Chat 2'
+    const chatItem = screen.getByText("Alpha Chat 2");
+    fireEvent.click(chatItem);
+
+    // Verify that onSelectChat is called with 'chat-2'
     expect(onSelectChat).toHaveBeenCalledWith("chat-2");
+  });
+
+  it("calls onSelectProject when a project is selected", () => {
+    const onSelectProject = vi.fn();
+
+    render(
+      <ProjectSidebar
+        selectedChatId={null}
+        onSelectChat={() => {}}
+        onSelectProject={onSelectProject}
+      />
+    );
+
+    // Select 'Project Beta' from the dropdown
+    const selectElement = screen.getByLabelText("Select Project");
+    fireEvent.change(selectElement, { target: { value: "2" } });
+
+    // Verify that onSelectProject is called with 2
+    expect(onSelectProject).toHaveBeenCalledWith(2);
   });
 });
