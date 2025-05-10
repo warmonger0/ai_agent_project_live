@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Chat, Project } from "@/types/chatTypes";
+
+// Inlined types to fix missing module error
+
+type Chat = {
+  id: number;
+  title: string;
+};
+
+type Project = {
+  id: number;
+  name: string;
+  chats: Chat[];
+};
 
 interface ProjectSidebarProps {
   onSelectChat: (chatId: number) => void;
