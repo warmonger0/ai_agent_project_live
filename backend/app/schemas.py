@@ -1,9 +1,10 @@
 # File: backend/app/schemas.py
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-# --- Existing ---
+# --- Task Schemas ---
 class TaskRequest(BaseModel):
     description: str
 
@@ -24,7 +25,7 @@ class TaskSummaryResponse(BaseModel):
     description: str
     status: str
 
-# --- New Project / Chat Schemas ---
+# --- Chat Message Schemas ---
 class ChatMessageBase(BaseModel):
     content: str
     role: str
@@ -38,8 +39,9 @@ class ChatMessage(ChatMessageBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # replaced orm_mode
 
+# --- Chat Schemas ---
 class ChatBase(BaseModel):
     title: Optional[str] = None
 
@@ -53,8 +55,9 @@ class Chat(ChatBase):
     messages: List[ChatMessage] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # replaced orm_mode
 
+# --- Project Schemas ---
 class ProjectBase(BaseModel):
     name: str
 
@@ -67,4 +70,4 @@ class Project(ProjectBase):
     chats: List[Chat] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # replaced orm_mode
