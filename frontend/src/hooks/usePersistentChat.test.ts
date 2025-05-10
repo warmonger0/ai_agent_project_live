@@ -1,11 +1,14 @@
 import { renderHook, act } from "@testing-library/react";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 import axios from "axios";
 import usePersistentChat from "./usePersistentChat";
 
-// Mock axios and get typed instance
+// Mock axios and cast with typed mock methods
 vi.mock("axios");
-const mockedAxios = vi.mocked(axios);
+const mockedAxios = vi.mocked(axios, true) as {
+  get: Mock;
+  post: Mock;
+};
 
 describe("usePersistentChat", () => {
   const mockChatId = "abc123";
@@ -35,14 +38,14 @@ describe("usePersistentChat", () => {
   });
 
   it("handles message sending", async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: [] }); // prevent undefined error
+    mockedAxios.get.mockResolvedValueOnce({ data: [] }); // Prevent undefined error
     mockedAxios.post.mockResolvedValueOnce({
       data: { id: "3", role: "assistant", content: "Got it." },
     });
 
     const { result } = renderHook(() => usePersistentChat(mockChatId));
 
-    await act(async () => {}); // wait for initial fetch
+    await act(async () => {}); // Wait for initial fetch
 
     act(() => {
       result.current.setInput("Hey");
