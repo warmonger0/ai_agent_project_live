@@ -2,7 +2,7 @@
 
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import ChatInput from "./ChatPanel/ChatInput";
+import ChatInput from "./ChatInput";
 
 describe("ChatInput", () => {
   it("renders input and button", () => {
