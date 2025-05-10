@@ -1,10 +1,12 @@
 import { renderHook, act } from "@testing-library/react";
 import axios from "axios";
 import usePersistentChat from "./usePersistentChat";
-import type { MockInstance } from "vitest";
+import { vi } from "vitest";
+
+// Partial mock of only the used methods
 const mockedAxios = axios as unknown as {
-  get: MockInstance;
-  post: MockInstance;
+  get: ReturnType<typeof vi.fn>;
+  post: ReturnType<typeof vi.fn>;
 };
 
 // Mock axios
