@@ -27,12 +27,16 @@ vi.mock("@/hooks/useProjects", () => ({
 }));
 
 describe("ProjectSidebar", () => {
-  it("renders list of projects and chats", () => {
+  it("renders chat list when a project is selected", () => {
     render(<ProjectSidebar selectedChatId={null} onSelectChat={() => {}} />);
 
-    expect(screen.getByText("Project Alpha")).toBeInTheDocument();
+    // Simulate selecting "Project Alpha"
+    fireEvent.change(screen.getByLabelText(/select project/i), {
+      target: { value: "1" },
+    });
+
     expect(screen.getByText("Alpha Chat 1")).toBeInTheDocument();
-    expect(screen.getByText("Beta Chat 1")).toBeInTheDocument();
+    expect(screen.getByText("Alpha Chat 2")).toBeInTheDocument();
   });
 
   it("calls onSelectChat when a chat is clicked", () => {
@@ -41,6 +45,10 @@ describe("ProjectSidebar", () => {
     render(
       <ProjectSidebar selectedChatId={null} onSelectChat={onSelectChat} />
     );
+
+    fireEvent.change(screen.getByLabelText(/select project/i), {
+      target: { value: "1" },
+    });
 
     fireEvent.click(screen.getByText("Alpha Chat 2"));
     expect(onSelectChat).toHaveBeenCalledWith("chat-2");
