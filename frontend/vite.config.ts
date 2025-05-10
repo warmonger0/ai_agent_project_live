@@ -1,3 +1,5 @@
+// File: frontend/vite.config.ts
+
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -6,22 +8,24 @@ import path from "path";
 export default defineConfig({
   plugins: [
     react({
-      jsxRuntime: "automatic",
+      jsxRuntime: "automatic", // enables modern JSX transform
     }),
-    tsconfigPaths(),
+    tsconfigPaths(), // resolves paths in tsconfig.json
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": path.resolve(__dirname, "src"), // enables "@/..." imports
     },
   },
+  build: {
+    sourcemap: true, // ✅ Enables source maps for better debugging
+  },
   define: {
-    // Avoid React devtools issues in testing & dev
-    __REACT_DEVTOOLS_GLOBAL_HOOK__: "({ isDisabled: true })",
+    __REACT_DEVTOOLS_GLOBAL_HOOK__: "({ isDisabled: true })", // silences devtools in tests
   },
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: "./src/setupTests.ts", // if you use one
+    setupFiles: "./src/setupTests.ts", // if you use it
   },
 });
