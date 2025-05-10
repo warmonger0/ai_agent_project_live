@@ -1,69 +1,68 @@
-// File: /frontend/src/__tests__/ChatPanel.test.tsx
-
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  cleanup,
-} from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { vi } from "vitest";
 import ChatPanel from "./ChatPanel";
-import { sendChatMessage } from "./ChatPanel/sendChatMessage";
 
-// Mock the sendChatMessage function
-vi.mock("../lib/sendChatMessage");
+// Mock usePersistentChat
+const mockHandleSend = vi.fn();
+const mockClearMessages = vi.fn();
+const mockSetInput = vi.fn();
 
-describe("ChatPanel Component", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+vi.mock("@/hooks/usePersistentChat", () => ({
+  default: () => ({
+    messages: [
+      { role: "user", content: "Hello" },
+      { role: "assistant", content: "Hi there!" },
+    ],
+    input: "Hello",
+    setInput: mockSetInput,
+    loading: false,
+    error: null,
+    handleSend: mockHandleSend,
+    clearMessages: mockClearMessages,
+  }),
+}));
+
+// Mock children
+vi.mock("./ChatPanel/ChatMessageList", () => ({
+  default: ({ messages }: { messages: any[] }) => (
+    <ul data-testid="chat-list">
+      {messages.map((msg, i) => (
+        <li key={i}>{msg.content}</li>
+      ))}
+    </ul>
+  ),
+}));
+
+vi.mock("./ChatPanel/ChatInput", () => ({
+  default: ({ value, onChange, onSend }: any) => (
+    <div>
+      <input
+        data-testid="chat-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <button onClick={onSend}>Send</button>
+    </div>
+  ),
+}));
+
+describe("ChatPanel", () => {
+  it("renders messages and input", () => {
+    render(<ChatPanel chatId="abc123" />);
+    expect(screen.getByTestId("chat-list")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-input")).toHaveValue("Hello");
+    expect(screen.getByText("Hi there!")).toBeInTheDocument();
   });
 
-  afterEach(() => {
-    cleanup();
+  it("sends a message when Send button is clicked", () => {
+    render(<ChatPanel chatId="abc123" />);
+    fireEvent.click(screen.getByText("Send"));
+    expect(mockHandleSend).toHaveBeenCalled();
   });
 
-  it("renders the chat input field", () => {
-    render(<ChatPanel />);
-    expect(
-      screen.getByPlaceholderText("Ask the agent something...")
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /send/i })).toBeInTheDocument();
-  });
-
-  it("sends a message and displays the response", async () => {
-    const mockResponse = {
-      choices: [{ message: { role: "assistant", content: "Hello from AI" } }],
-    };
-
-    (sendChatMessage as Mock).mockResolvedValueOnce(mockResponse);
-
-    render(<ChatPanel />);
-    const input = screen.getByPlaceholderText("Ask the agent something...");
-    const sendButton = screen.getByRole("button", { name: /send/i });
-
-    fireEvent.change(input, { target: { value: "Hello" } });
-    fireEvent.click(sendButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Hello from AI")).toBeInTheDocument();
-    });
-
-    expect((input as HTMLInputElement).value).toBe("");
-  });
-
-  it("displays an error message when the API call fails", async () => {
-    (sendChatMessage as Mock).mockRejectedValueOnce(new Error("API Error"));
-
-    render(<ChatPanel />);
-    const input = screen.getByPlaceholderText("Ask the agent something...");
-    const sendButton = screen.getByRole("button", { name: /send/i });
-
-    fireEvent.change(input, { target: { value: "Hello" } });
-    fireEvent.click(sendButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
-    });
+  it("clears messages when Clear is clicked", () => {
+    render(<ChatPanel chatId="abc123" />);
+    fireEvent.click(screen.getByText("Clear"));
+    expect(mockClearMessages).toHaveBeenCalled();
   });
 });
