@@ -83,7 +83,6 @@ class Chat(Base):
         lazy="selectin",  # ✅ same pattern for nested chat→messages
     )
 
-
 # --- Chat Message Model ---
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
