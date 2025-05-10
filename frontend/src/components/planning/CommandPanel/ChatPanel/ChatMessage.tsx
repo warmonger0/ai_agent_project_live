@@ -30,7 +30,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
       if (inline) {
         return (
-          <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">
+          <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono break-words">
             {codeContent}
           </code>
         );
@@ -53,7 +53,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               Edit
             </button>
           </div>
-          <pre className="bg-gray-800 text-white rounded-md p-4 overflow-x-auto text-sm max-w-full">
+          <pre className="bg-gray-800 text-white rounded-md p-4 text-sm break-words whitespace-pre-wrap overflow-auto max-w-full">
             <code>{codeContent}</code>
           </pre>
         </div>
@@ -64,11 +64,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`relative p-3 rounded-md w-full whitespace-pre-wrap bg-opacity-90 ${
+        className={`relative p-3 rounded-md w-full bg-opacity-90 overflow-hidden ${
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        <div className="prose prose-sm max-w-full break-words">
+        <div className="prose prose-sm max-w-full break-words whitespace-pre-wrap">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight]}
