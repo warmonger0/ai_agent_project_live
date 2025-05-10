@@ -9,7 +9,7 @@ const CommandPanel: React.FC = () => {
   const [topHeight, setTopHeight] = useState(60); // in %
   const isDragging = useRef(false);
 
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
 
   const startDrag = (e: React.MouseEvent) => {
     isDragging.current = true;
@@ -54,7 +54,9 @@ const CommandPanel: React.FC = () => {
           style={{ height: `${topHeight}%` }}
           className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden"
         >
-          <ChatPanel chatId={selectedChatId} />
+          <ChatPanel
+            chatId={selectedChatId !== null ? selectedChatId.toString() : null}
+          />
         </div>
 
         {/* Drag handle */}
