@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import ChatPanel from "@/components/planning/CommandPanel/ChatPanel";
 import TabbedPanel from "@/components/planning/CommandPanel/TabbedPanel";
 import PhaseSidebar from "@/components/planning/CommandPanel/SidebarPanel/PhaseSidebar";
+import ProjectSidebar from "@/components/planning/CommandPanel/ProjectSidebar";
 
 const CommandPanel: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,7 +63,8 @@ const CommandPanel: React.FC = () => {
       </div>
 
       {/* Sidebar */}
-      <aside className="w-64 border-l border-gray-300 bg-white shadow-inner px-4 py-6">
+      <aside className="w-64 border-l border-gray-300 bg-white shadow-inner px-4 py-6 space-y-6">
+        <ProjectSidebar />
         <PhaseSidebar />
       </aside>
     </div>
