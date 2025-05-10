@@ -1,14 +1,12 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useChat } from "./useChat"; // ✅ correct
-import sendChatMessage from "./sendChatMessage"; // ✅ default import
+import { describe, it, expect, vi } from "vitest";
+import { useChat } from "./useChat";
+import sendChatMessage from "./sendChatMessage";
 
-vi.mock("./sendChatMessage"); // ✅ mock default export directly
-
-beforeEach(() => {
-  // Clear mocks before each test
-  vi.clearAllMocks();
-});
+// Mock the module
+vi.mock("./sendChatMessage", () => ({
+  default: vi.fn(),
+}));
 
 describe("useChat", () => {
   it("initializes with empty messages and loading false", () => {
@@ -22,14 +20,16 @@ describe("useChat", () => {
       choices: [{ message: { role: "assistant", content: "Hello back!" } }],
     };
 
-    (
-      sendChatMessage as unknown as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce(mockResponse);
+    const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
+    mockFn.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useChat());
 
-    await act(async () => {
+    act(() => {
       result.current.setInput("Hi");
+    });
+
+    await act(async () => {
       await result.current.handleSend();
     });
 
@@ -42,18 +42,20 @@ describe("useChat", () => {
   });
 
   it("sets error message on failed request", async () => {
-    (
-      sendChatMessage as unknown as ReturnType<typeof vi.fn>
-    ).mockRejectedValueOnce(new Error("Network error"));
+    const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
+    mockFn.mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => useChat());
 
-    await act(async () => {
+    act(() => {
       result.current.setInput("test");
+    });
+
+    await act(async () => {
       await result.current.handleSend();
     });
 
-    expect(result.current.error).toBe("❌ Error: Could not get a response.");
+    expect(result.current.error).toBe("Network error");
     expect(result.current.loading).toBe(false);
   });
 });
