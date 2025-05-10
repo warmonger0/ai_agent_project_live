@@ -16,12 +16,10 @@ describe("useChat", () => {
   });
 
   it("sends user message and receives assistant reply", async () => {
-    const mockResponse = {
-      choices: [{ message: { role: "assistant", content: "Hello back!" } }],
-    };
-
     const mockFn = sendChatMessage as unknown as ReturnType<typeof vi.fn>;
-    mockFn.mockResolvedValueOnce(mockResponse);
+    mockFn.mockImplementationOnce(async (_payload, _baseUrl, onStreamChunk) => {
+      if (onStreamChunk) onStreamChunk("Hello back!");
+    });
 
     const { result } = renderHook(() => useChat());
 
