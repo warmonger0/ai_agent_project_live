@@ -1,5 +1,3 @@
-// File: frontend/src/components/planning/CommandPanel/ChatPanel/ChatMessage.tsx
-
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,10 +46,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       }
 
       return (
-        <div className="not-prose my-2">
-          <div className="relative group">
+        <>
+          <div className="relative group my-2 not-prose">
             <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
-              <CopyButton text={codeContent || ""} />
+              <CopyButton text={codeContent} />
               <button
                 onClick={() => handleEdit(codeContent)}
                 className="hover:underline"
@@ -63,7 +61,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               <code>{codeContent}</code>
             </pre>
           </div>
-        </div>
+        </>
       );
     },
   };
@@ -75,15 +73,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "bg-blue-100 text-right" : "bg-gray-100 text-left"
         }`}
       >
-        <div className="prose prose-sm max-w-full break-words whitespace-pre-wrap">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={components}
-          >
-            {message.content}
-          </ReactMarkdown>
-        </div>
+        <ReactMarkdown
+          className="prose prose-sm max-w-full break-words whitespace-pre-wrap"
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+          components={components}
+        >
+          {message.content}
+        </ReactMarkdown>
       </div>
     </div>
   );
