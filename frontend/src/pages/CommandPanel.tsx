@@ -37,6 +37,11 @@ const CommandPanel: React.FC = () => {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-gray-50 text-gray-900">
+      {/* Left Sidebar */}
+      <aside className="w-64 border-r border-gray-300 bg-white shadow-inner px-4 py-6">
+        <ProjectSidebar />
+      </aside>
+
       {/* Main content column */}
       <div ref={containerRef} className="flex flex-col flex-1 p-4 space-y-0">
         {/* Chat panel with adjustable height */}
@@ -62,9 +67,8 @@ const CommandPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Sidebar */}
-      <aside className="w-64 border-l border-gray-300 bg-white shadow-inner px-4 py-6 space-y-6">
-        <ProjectSidebar />
+      {/* Right Sidebar */}
+      <aside className="w-64 border-l border-gray-300 bg-white shadow-inner px-4 py-6">
         <PhaseSidebar />
       </aside>
     </div>
