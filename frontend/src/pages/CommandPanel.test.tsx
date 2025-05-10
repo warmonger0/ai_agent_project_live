@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import CommandPanel from "./CommandPanel";
 
-// Mock the ProjectSidebar and ChatPanel subcomponents
+// Static mocks for layout-only render test
 vi.mock("../components/planning/CommandPanel/ProjectSidebar", () => ({
   default: () => <div data-testid="project-sidebar">MockSidebar</div>,
 }));
@@ -16,30 +16,20 @@ vi.mock("../components/planning/CommandPanel/ChatPanel", () => ({
 describe("CommandPanel", () => {
   it("renders the layout with sidebar and chat panel", () => {
     render(<CommandPanel />);
-
-    // Sidebar and ChatPanel should render with initial state
     expect(screen.getByTestId("project-sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("chat-panel")).toHaveTextContent("Chat ID: null");
   });
 
   it("updates the chatId prop when chat selection changes", async () => {
-    // Mock ProjectSidebar to emit onSelectChat
-    const mockSetChat = vi.fn();
-    const mockSetProject = vi.fn();
+    // Dynamic mock: overrides ProjectSidebar to trigger selection
+    vi.doMock("../components/planning/CommandPanel/ProjectSidebar", () => ({
+      default: ({ onSelectChat }: any) => {
+        onSelectChat("chat-123");
+        return <div data-testid="project-sidebar" />;
+      },
+    }));
 
-    vi.doMock(
-      "../components/planning/CommandPanel/ProjectSidebar",
-      () => ({
-        default: ({ onSelectProject, onSelectChat }: any) => {
-          // Call onSelectChat directly
-          onSelectChat("chat-123");
-          return <div data-testid="project-sidebar" />;
-        },
-      }),
-      { virtual: true }
-    );
-
-    // Re-import to apply updated mock
+    // Reload CommandPanel with updated mock
     const { default: UpdatedCommandPanel } = await import("./CommandPanel");
 
     render(<UpdatedCommandPanel />);
