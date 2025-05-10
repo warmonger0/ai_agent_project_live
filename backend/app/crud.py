@@ -20,12 +20,11 @@ def get_all_projects(db: Session) -> list[models.Project]:
 def update_project_understanding(
     db: Session, project_id: int, new_understanding: str
 ) -> models.Project | None:
-    project = get_project(db, project_id)
-    if not project:
-        return None
-    project.understanding = new_understanding
-    db.commit()
-    db.refresh(project)
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if project:
+        project.understanding = new_understanding
+        db.commit()
+        db.refresh(project)
     return project
 
 # --- Chats ---
