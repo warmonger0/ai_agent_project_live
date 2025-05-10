@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 import type { ChatMessage as ChatMessageType } from "./types";
-import { useCopyToClipboard } from "./useCopyToClipboard";
+import CopyButton from "./CopyButton";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -14,7 +14,6 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === "user";
-  const { copy, copied } = useCopyToClipboard();
 
   const handleEdit = (code: string) => {
     console.log("📝 Edit clicked:", code);
@@ -43,12 +42,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       return (
         <div className="relative group">
           <div className="absolute top-1 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition space-x-2 z-10">
-            <button
-              onClick={() => copy(codeContent)}
-              className="hover:underline"
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
+            <CopyButton text={codeContent} />
             <button
               onClick={() => handleEdit(codeContent)}
               className="hover:underline"
