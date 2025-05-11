@@ -2,7 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import ChatMessage from "@/components/planning/ChatPanel/ChatMessage";
+import ChatMessage from "@/components/planning/CommandPanel/ChatPanel/ChatMessage";
 
 describe("ChatMessage", () => {
   it("renders a user message with correct content", () => {
