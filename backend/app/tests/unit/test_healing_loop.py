@@ -17,7 +17,6 @@ ddef test_reset_failed_tasks_resets_and_commits():
         mock_db.commit.assert_called_once()
         mock_db.close.assert_called_once()
 
-
 @pytest.mark.asyncio
 async def test_healing_loop_triggers_reset_on_failure():
     mock_logger = MagicMock()
