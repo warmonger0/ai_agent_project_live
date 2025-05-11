@@ -1,12 +1,15 @@
 /// <reference types="vitest" />
 import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import * as taskService from "../lib/services/taskService";
+import taskService from "@/lib/services/taskService";
+
 import TaskTable from "../components/TaskTable";
 
 vi.mock("../lib/services/taskService");
 
-const mockedFetchTasks = taskService.fetchTasks as unknown as ReturnType<typeof vi.fn>;
+const mockedFetchTasks = taskService.fetchTasks as unknown as ReturnType<
+  typeof vi.fn
+>;
 
 describe("TaskTable", () => {
   beforeEach(() => {
