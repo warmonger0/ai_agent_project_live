@@ -14,7 +14,7 @@ from backend.app.services.healing_loop import healing_loop
 
 from backend.app.api.v1 import api_router
 from backend.app.controllers import logs_controller  
-from backend.app.routes import chat  # ✅ New import for chat endpoints
+from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
 
 import asyncio
 import logging
@@ -55,7 +55,7 @@ app.add_middleware(
 # ✅ Mount API routes
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(logs_controller.router)  # Mount /logs route
-app.include_router(chat.router, prefix="/api/v1")  # ✅ Mount chat routes
+app.include_router(project_chat_routes.router, prefix="/api/v1")  # ✅ Mount chat routes
 
 # ✅ Root route
 @app.get("/")
