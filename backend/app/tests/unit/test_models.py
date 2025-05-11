@@ -60,3 +60,18 @@ def test_create_memory_ledger(session):
     assert result.related_id == 1
     assert result.content == "This is a memory entry."
     assert isinstance(result.timestamp, datetime)
+
+def test_project_chat_relationship(session):
+    from backend.app.models import Project, Chat
+    now = datetime.utcnow()
+
+    project = Project(name="Model Test", created_at=now)
+    chat = Chat(title="Chat Linked", created_at=now, project=project)
+
+    session.add(project)
+    session.add(chat)
+    session.commit()
+    session.refresh(project)
+
+    assert len(project.chats) == 1
+    assert project.chats[0].title == "Chat Linked"
