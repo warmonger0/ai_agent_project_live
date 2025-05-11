@@ -180,12 +180,11 @@
 │   │   │   ├── planning
 │   │   │   ├── plugin
 │   │   │   ├── PluginExecutionForm.tsx
-│   │   │   ├── PluginHistory
+│   │   │   ├── PluginHistory.test.tsx
 │   │   │   ├── PluginHistory.tsx
 │   │   │   ├── PluginPanel.tsx
-│   │   │   ├── StatusBadge
 │   │   │   ├── table
-│   │   │   ├── TaskTable
+│   │   │   ├── TaskTable.test.tsx
 │   │   │   ├── TaskTable.tsx
 │   │   │   └── ui
 │   │   ├── hooks
@@ -266,4 +265,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-71 directories, 196 files
+68 directories, 198 files
