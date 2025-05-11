@@ -34,6 +34,17 @@ app = FastAPI(
     version="1.0.0",
     description="Backend services for AI Agent task routing, plugin execution, and monitoring.",
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://192.168.50.142:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ✅ Error handlers
 app.add_exception_handler(HTTPException, error_handler.http_exception_handler)
