@@ -12,7 +12,7 @@ from backend.app.routes.health import router as health_router
 from backend.app.routes.logs import router as logs_router
 
 #command panel
-from backend.app.api.v1.planning import chat as planning_chat
+from backend.app.routes import deepseek_routes as planning_chat
 
 router = APIRouter()
 
