@@ -69,7 +69,7 @@ def read_chat(chat_id: int, db: Session = Depends(get_db)):
 # ──────────────── Message Endpoints ────────────────
 
 @router.post("/chats/{chat_id}/messages/", response_model=schemas.ChatMessage)
-def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
+async def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
     # ✅ Validate chat
     chat = crud.get_chat(db=db, chat_id=chat_id)
     if chat is None:
@@ -84,9 +84,9 @@ def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session
     messages = crud.get_messages_for_chat(db=db, chat_id=chat_id)
     history = [{"role": m.role, "content": m.content} for m in messages]
 
-    # ✅ Get AI response
+    # ✅ Get AI response (awaited properly now)
     try:
-        reply = query_deepseek(history)
+        reply = await query_deepseek(history)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DeepSeek error: {e}")
 
@@ -96,6 +96,7 @@ def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session
     )
 
     return assistant_msg
+
 
 @router.get("/chats/{chat_id}/messages/", response_model=List[schemas.ChatMessage])
 def read_messages(chat_id: int, db: Session = Depends(get_db)):
