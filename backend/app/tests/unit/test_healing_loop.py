@@ -43,7 +43,18 @@ async def test_healing_loop_skips_on_success():
     with patch("backend.app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
          patch("backend.app.services.healing_loop.logger") as mock_logger, \
          patch("backend.app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock):
+
+        # Start healing loop
         task = asyncio.create_task(healing_loop())
-        await asyncio.sleep(0.1)
+
+        # Wait for log call
+        await asyncio.sleep(0.1)  # Give the loop enough time to log
         task.cancel()
+
+        # Ensure graceful cancel
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
         mock_logger.info.assert_any_call("✅ Health check passed.")
