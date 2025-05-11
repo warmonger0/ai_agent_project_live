@@ -4,7 +4,6 @@ import json
 import re
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-
 APP_DIR = os.path.join(PROJECT_ROOT, "backend/app")
 TEST_DIR = os.path.join(PROJECT_ROOT, "backend/tests")
 VARIABLE_TRACK_FILE = os.path.join(PROJECT_ROOT, "backend/group_variables.txt")
