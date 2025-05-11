@@ -11,11 +11,11 @@ def test_store_successful_execution():
          patch("backend.app.services.execution_tracker.PluginExecution", return_value=mock_plugin_execution):
 
         store_execution_result(
-            "echo",
-            {"message": "hi"},      # input_json
-            {"response": "hi back"},  # output_json
-            "success",
-            None
+            "echo",                    # plugin_name
+            "hi",                      # input_text
+            {"response": "hi back"},   # output_data
+            "success",                 # status
+            "test"                     # source
         )
 
         mock_session.add.assert_called_once_with(mock_plugin_execution)
@@ -30,10 +30,10 @@ def test_store_execution_db_failure():
     with patch("backend.app.services.execution_tracker.SessionLocal", return_value=mock_session):
         store_execution_result(
             "echo",
-            {"message": "fail"},
+            "fail",
             None,
             "failed",
-            "DB write failed"
+            "test"
         )
 
         mock_session.close.assert_called_once()
