@@ -2,7 +2,7 @@
 import { vi } from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import PluginExecutionForm from "../components/plugin/PluginExecutionForm";
+import PluginExecutionForm from "@/components/plugin/PluginExecutionForm";
 
 const mockSpec = [
   { name: "input1", label: "Text Field", type: "text", required: true },
