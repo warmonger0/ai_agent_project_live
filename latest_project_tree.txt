@@ -48,7 +48,7 @@
 │   │   │   └── test_plugin.py
 │   │   ├── requirements.txt
 │   │   ├── routes
-│   │   │   ├── chat.py
+│   │   │   ├── deepseek_routes.py
 │   │   │   ├── health.py
 │   │   │   ├── __init__.py
 │   │   │   ├── logs.py
@@ -56,7 +56,8 @@
 │   │   │   ├── plugin_history.py
 │   │   │   ├── plugin_list.py
 │   │   │   ├── plugin_routes.py
-│   │   │   └── plugin_spec.py
+│   │   │   ├── plugin_spec.py
+│   │   │   └── project_chat_routes.py
 │   │   ├── schemas.py
 │   │   ├── scripts
 │   │   │   └── inspect_db.py
@@ -267,4 +268,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-68 directories, 200 files
+68 directories, 201 files
