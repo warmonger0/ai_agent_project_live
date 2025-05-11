@@ -1,3 +1,4 @@
+// File: vite.config.ts
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -16,6 +17,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+  define: {
+    // Make VITE_API_BASE_URL available to frontend via import.meta.env
+    "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
+      "https://war.myddns.me:8000"
+    ),
+  },
   server: {
     https: {
       key: fs.readFileSync(path.resolve(__dirname, "key.pem")),
@@ -25,7 +32,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "https://192.168.50.142:8000", // backend
+        target: "https://192.168.50.142:8000", // local backend target
         changeOrigin: true,
         secure: false,
       },
