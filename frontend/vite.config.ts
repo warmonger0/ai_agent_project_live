@@ -17,17 +17,21 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+<<<<<<< Updated upstream
   define: {
     // Make VITE_API_BASE_URL available to frontend via import.meta.env
     "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
       "https://war.myddns.me:8000"
     ),
   },
+=======
+>>>>>>> Stashed changes
   server: {
     https: {
       key: fs.readFileSync(path.resolve(__dirname, "key.pem")),
       cert: fs.readFileSync(path.resolve(__dirname, "cert.pem")),
     },
+<<<<<<< Updated upstream
     host: true,
     port: 5173,
     proxy: {
@@ -40,6 +44,10 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+=======
+    host: "0.0.0.0",
+    port: 5173,
+>>>>>>> Stashed changes
   },
   test: {
     globals: true,
