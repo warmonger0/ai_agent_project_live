@@ -25,4 +25,13 @@ def test_create_message_and_response():
     # Create project and chat
     res_project = client.post("/api/v1/chat/projects/", json={"name": "MessageProject"})
     project_id = res_project.json()["id"]
-    res_chat = client.post_
+    res_chat = client.post(f"/api/v1/chat/projects/{project_id}/chats/", json={"title": "Chat for Msgs"})
+    chat_id = res_chat.json()["id"]
+
+    # Post message
+    res_msg = client.post(f"/api/v1/chat/chats/{chat_id}/messages/", json={
+        "role": "user",
+        "content": "Hello DeepSeek"
+    })
+    assert res_msg.status_code == 200
+    assert res_msg.json()["role"] == "assistant"
