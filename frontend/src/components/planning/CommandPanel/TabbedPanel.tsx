@@ -3,13 +3,17 @@ import UnderstandingTab from "./TabbedInfoPanel/UnderstandingTab";
 import FileTreeTab from "./TabbedInfoPanel/FileTreeTab";
 import IssuesTab from "./ChatPanel/IssuesTab";
 
-const TabbedPanel: React.FC = () => {
+interface TabbedPanelProps {
+  projectId: number | null;
+}
+
+const TabbedPanel: React.FC<TabbedPanelProps> = ({ projectId }) => {
   const [activeTab, setActiveTab] = useState("understanding");
 
   const renderTab = () => {
     switch (activeTab) {
       case "understanding":
-        return <UnderstandingTab />;
+        return <UnderstandingTab projectId={projectId} />;
       case "filetree":
         return <FileTreeTab />;
       case "issues":
