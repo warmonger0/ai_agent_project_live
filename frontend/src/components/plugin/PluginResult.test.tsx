@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import PluginResult from "../components/plugin/PluginResult";
+import PluginResult from "@/components/plugin/PluginResult";
 
 describe("PluginResult", () => {
   it("renders plugin output when result is valid", () => {
