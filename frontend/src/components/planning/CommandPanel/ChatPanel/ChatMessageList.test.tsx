@@ -2,8 +2,8 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import ChatMessageList from "@/components/planning/ChatPanel/ChatMessageList";
-import type { ChatMessage } from "@/types";
+import ChatMessageList from "@/components/planning/CommandPanel/ChatPanel/ChatMessageList";
+import type { ChatMessage } from "./types";
 
 describe("ChatMessageList", () => {
   const messages: ChatMessage[] = [
