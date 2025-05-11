@@ -6,8 +6,8 @@ import logging
 import asyncio
 import json
 
-# 🔁 Import saving logic (adjust import path if needed)
-from backend.app.routes.project_chat_routes import save_chat_message
+from backend.app import crud, models
+from backend.app.db.session import get_db
 
 router = APIRouter()
 
@@ -62,14 +62,18 @@ async def chat_with_deepseek(request: Request):
                                     continue  # silently ignore malformed chunks
                             await asyncio.sleep(0.01)
 
-                # ✅ Save final assistant message
+                # Save final assistant message
                 assistant_text = "".join(collected_chunks).strip()
                 if assistant_text:
-                    await save_chat_message(chat_id=chat_id, content=assistant_text, role="assistant")
+                    db = next(get_db())
+                    message = models.ChatMessage(chat_id=chat_id, content=assistant_text, role="assistant")
+                    db.add(message)
+                    db.commit()
+                    db.refresh(message)
 
             return StreamingResponse(stream_gen(), media_type="text/event-stream")
 
-        # 🧱 Fallback: non-streaming request
+        # Fallback: non-streaming request
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
@@ -90,7 +94,11 @@ async def chat_with_deepseek(request: Request):
             raise HTTPException(status_code=500, detail=f"Unexpected DeepSeek format: {data}")
 
         assistant_message = data["message"]["content"]
-        await save_chat_message(chat_id=chat_id, content=assistant_message, role="assistant")
+        db = next(get_db())
+        message = models.ChatMessage(chat_id=chat_id, content=assistant_message, role="assistant")
+        db.add(message)
+        db.commit()
+        db.refresh(message)
 
         return {
             "choices": [
@@ -106,24 +114,3 @@ async def chat_with_deepseek(request: Request):
     except Exception as e:
         logging.exception("[CHAT ERROR] Failed during chat_with_deepseek:")
         raise HTTPException(status_code=500, detail=str(e))
-
-async def query_deepseek(messages: list[dict]) -> str:
-    """
-    Sends messages to DeepSeek and returns assistant's content.
-    """
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "http://localhost:11434/api/chat",
-                json={
-                    "model": "deepseek-coder:latest",
-                    "messages": messages,
-                    "stream": False,
-                },
-                timeout=60,
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data.get("message", {}).get("content", "")
-    except Exception as e:
-        raise RuntimeError(f"Failed to reach DeepSeek: {e}")
