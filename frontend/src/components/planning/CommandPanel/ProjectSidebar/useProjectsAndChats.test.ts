@@ -13,12 +13,14 @@ describe("useProjectsAndChats", () => {
       // Mock project list
       .mockImplementationOnce(() =>
         Promise.resolve({
+          ok: true,
           json: () => Promise.resolve([{ id: 1, name: "Test Project" }]),
         })
       )
       // Mock chat list for selected project
       .mockImplementationOnce(() =>
         Promise.resolve({
+          ok: true,
           json: () => Promise.resolve([{ id: 100, title: "Alpha Chat A" }]),
         })
       );
@@ -31,7 +33,7 @@ describe("useProjectsAndChats", () => {
     });
 
     // Select project
-    act(() => {
+    await act(async () => {
       result.current.setSelectedProjectId(1);
     });
 
@@ -48,26 +50,28 @@ describe("useProjectsAndChats", () => {
       // Initial projects fetch
       .mockImplementationOnce(() =>
         Promise.resolve({
+          ok: true,
           json: () => Promise.resolve([{ id: 2, name: "Reloadable Project" }]),
         })
       )
       // First chat fetch (empty)
       .mockImplementationOnce(() =>
         Promise.resolve({
+          ok: true,
           json: () => Promise.resolve([]),
         })
       )
       // Refetched chat fetch
       .mockImplementationOnce(() =>
         Promise.resolve({
+          ok: true,
           json: () => Promise.resolve([{ id: 200, title: "Reloaded Chat" }]),
         })
       );
 
     const { result } = renderHook(() => useProjectsAndChats());
 
-    // Select project to trigger chat load
-    act(() => {
+    await act(async () => {
       result.current.setSelectedProjectId(2);
     });
 
@@ -75,7 +79,6 @@ describe("useProjectsAndChats", () => {
       expect(result.current.chats).toEqual([]);
     });
 
-    // Manually trigger chat reload
     await act(async () => {
       await result.current.refetchChats();
     });
