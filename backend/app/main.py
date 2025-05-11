@@ -15,6 +15,7 @@ from backend.app.services.healing_loop import healing_loop
 from backend.app.api.v1 import api_router
 from backend.app.controllers import logs_controller  
 from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
+from backend.app.routes import deepseek_routes
 
 import asyncio
 import logging
