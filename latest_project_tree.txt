@@ -155,6 +155,7 @@
 │   ├── cert.pem
 │   ├── components.json
 │   ├── .env
+│   ├── .env.test.local
 │   ├── eslint.config.js
 │   ├── frontend_tree.txt
 │   ├── .gitignore
@@ -168,6 +169,7 @@
 │   ├── public
 │   │   └── vite.svg
 │   ├── README.md
+│   ├── renders
 │   ├── scripts
 │   │   └── src
 │   │       └── refactor-status-constants.ts
@@ -265,4 +267,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-68 directories, 198 files
+68 directories, 200 files
