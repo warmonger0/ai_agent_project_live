@@ -13,7 +13,7 @@ from backend.app.models import Task
 from backend.app.services.healing_loop import healing_loop
 
 from backend.app.api.v1 import api_router
-from backend.app.controllers import logs_controller  
+from backend.app.controllers import logs_controller
 from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
 from backend.app.routes import deepseek_routes
 
@@ -23,7 +23,7 @@ import sys
 
 # ✅ Configure Logging to display DEBUG or WARNING messages in console
 logging.basicConfig(
-    level=logging.DEBUG,  # Set to DEBUG to capture all logs
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
@@ -35,12 +35,16 @@ app = FastAPI(
     description="Backend services for AI Agent task routing, plugin execution, and monitoring.",
 )
 
+# ✅ Unified CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://192.168.50.142:5173"
+        "http://192.168.50.142:5173",
+        "https://localhost:5173",
+        "https://127.0.0.1:5173",
+        "https://192.168.50.142:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -51,19 +55,6 @@ app.add_middleware(
 app.add_exception_handler(HTTPException, error_handler.http_exception_handler)
 app.add_exception_handler(RequestValidationError, error_handler.validation_exception_handler)
 app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
-
-# ✅ CORS setup
-allowed_origins = [
-    "https://192.168.50.142:5173",  # ✅ Explicitly allow Vite dev server
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ✅ Mount API routes
 app.include_router(api_router, prefix="/api/v1")
