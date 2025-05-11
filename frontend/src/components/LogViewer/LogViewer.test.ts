@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import api, { unwrapApiResponse } from "@/lib/services/api";
 
-// ✅ Correct mock: api.get returns { data: { data: [...] } }
+// ✅ Fix: simulate exact structure returned by real backend
 vi.mock("@/lib/services/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/services/api")>(
     "@/lib/services/api"
@@ -12,12 +12,14 @@ vi.mock("@/lib/services/api", async () => {
     default: {
       get: vi
         .fn()
-        .mockResolvedValueOnce({ data: { data: ["healing.log", "test.log"] } }) // logs list
         .mockResolvedValueOnce({
-          data: { data: "healing started...\nall good." },
-        }), // file content
+          data: { data: ["healing.log", "test.log"] }, // ✅ first call: log list
+        })
+        .mockResolvedValueOnce({
+          data: { data: "healing started...\nall good." }, // ✅ second call: log content
+        }),
     },
-    unwrapApiResponse: (res: any) => res.data,
+    unwrapApiResponse: (res: any) => res.data, // ✅ this now pulls `.data` from `{ data: { data: [...] } }`
   };
 });
 
@@ -33,6 +35,9 @@ describe("Log Viewer API", () => {
   it("should return contents of a real log file", async () => {
     const res = await api.get("/api/v1/logs");
     const files = unwrapApiResponse<string[]>(res.data);
+
+    // ✅ Fix: ensure files is actually an array
+    if (!Array.isArray(files)) throw new Error("Expected an array of files");
 
     const logFile = files.find(
       (name) => name.includes("healing") || name.includes("test")
