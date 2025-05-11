@@ -26,10 +26,10 @@ async def test_healing_loop_triggers_reset_on_failure():
     def fake_reset_failed_tasks(*args, **kwargs):
         raise StopAsyncIteration()
 
-    with patch("app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
-         patch("app.services.healing_loop.reset_failed_tasks", side_effect=fake_reset_failed_tasks) as mock_reset, \
-         patch("app.services.healing_loop.logger", mock_logger), \
-         patch("app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock):
+    with patch("backend.app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
+         patch("backend.app.services.healing_loop.reset_failed_tasks", side_effect=fake_reset_failed_tasks) as mock_reset, \
+         patch("backend.app.services.healing_loop.logger", mock_logger), \
+         patch("backend.app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock):
 
         with pytest.raises(StopAsyncIteration):
             await healing_loop()
@@ -40,9 +40,9 @@ async def test_healing_loop_triggers_reset_on_failure():
 async def test_healing_loop_skips_on_success():
     mock_get = AsyncMock(return_value=MagicMock(status_code=200))
 
-    with patch("app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
-         patch("app.services.healing_loop.logger") as mock_logger, \
-         patch("app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+    with patch("backend.app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
+         patch("backend.app.services.healing_loop.logger") as mock_logger, \
+         patch("backend.app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock):
         task = asyncio.create_task(healing_loop())
         await asyncio.sleep(0.1)
         task.cancel()
