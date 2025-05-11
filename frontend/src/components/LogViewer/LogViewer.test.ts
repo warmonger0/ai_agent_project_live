@@ -13,13 +13,13 @@ vi.mock("@/lib/services/api", async () => {
       get: vi
         .fn()
         .mockResolvedValueOnce({
-          data: { data: ["healing.log", "test.log"] }, // ✅ first call
+          data: { data: ["healing.log", "test.log"] }, // ✅ logs list
         })
         .mockResolvedValueOnce({
-          data: { data: "healing started...\nall good." }, // ✅ second call — FIXED: still wrapped in { data }
+          data: { data: ["healing started...", "all good"].join("\n") }, // ✅ log content
         }),
     },
-    unwrapApiResponse: (res: any) => res.data, // ✅ expected to unwrap the inner `data`
+    unwrapApiResponse: (res: any) => res.data, // ✅ unwrapping expects `.data`
   };
 });
 
