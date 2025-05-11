@@ -6,8 +6,7 @@ import logging
 import asyncio
 import json
 
-from backend.app import crud, models
-from backend.app.db.session import get_db
+from backend.app.routes.project_chat_routes.chat_helpers import save_chat_message
 
 router = APIRouter()
 
@@ -59,21 +58,17 @@ async def chat_with_deepseek(request: Request):
                                     if parsed.get("message", {}).get("role") == "assistant":
                                         collected_chunks.append(parsed["message"]["content"])
                                 except Exception:
-                                    continue  # silently ignore malformed chunks
+                                    continue
                             await asyncio.sleep(0.01)
 
-                # Save final assistant message
+                # ✅ Save assistant reply once full response is received
                 assistant_text = "".join(collected_chunks).strip()
                 if assistant_text:
-                    db = next(get_db())
-                    message = models.ChatMessage(chat_id=chat_id, content=assistant_text, role="assistant")
-                    db.add(message)
-                    db.commit()
-                    db.refresh(message)
+                    save_chat_message(chat_id=chat_id, content=assistant_text, role="assistant")
 
             return StreamingResponse(stream_gen(), media_type="text/event-stream")
 
-        # Fallback: non-streaming request
+        # Non-streaming fallback
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
@@ -94,11 +89,7 @@ async def chat_with_deepseek(request: Request):
             raise HTTPException(status_code=500, detail=f"Unexpected DeepSeek format: {data}")
 
         assistant_message = data["message"]["content"]
-        db = next(get_db())
-        message = models.ChatMessage(chat_id=chat_id, content=assistant_message, role="assistant")
-        db.add(message)
-        db.commit()
-        db.refresh(message)
+        save_chat_message(chat_id=chat_id, content=assistant_message, role="assistant")
 
         return {
             "choices": [
