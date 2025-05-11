@@ -38,29 +38,22 @@ async def test_healing_loop_triggers_reset_on_failure():
 
 @pytest.mark.asyncio
 async def test_healing_loop_skips_on_success():
-    mock_get = AsyncMock(return_value=MagicMock(status_code=200))
-    mock_info = MagicMock()
+    from backend.app.services import healing_loop  # Access actual module instance
 
-    # Patch everything necessary
+    mock_get = AsyncMock(return_value=MagicMock(status_code=200))
+
     with patch("backend.app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
-         patch("backend.app.services.healing_loop.logger.info", mock_info), \
+         patch.object(healing_loop.logger, "info") as mock_info, \
          patch("backend.app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
 
         # Force CHECK_INTERVAL = 0
-        from backend.app import services
-        services.healing_loop.CHECK_INTERVAL = 0
+        healing_loop.CHECK_INTERVAL = 0
 
-        # Stop after one loop iteration
+        # Stop loop after one iteration
         mock_sleep.side_effect = asyncio.CancelledError()
 
         # Run loop
-        try:
-            await healing_loop()
-        except asyncio.CancelledError:
-            pass
+        with pytest.raises(asyncio.CancelledError):
+            await healing_loop.healing_loop()
 
-        # Debug: print logs if needed
-        # print(mock_info.call_args_list)
-
-        # Check that the health check log was emitted
         mock_info.assert_any_call("✅ Health check passed.")
