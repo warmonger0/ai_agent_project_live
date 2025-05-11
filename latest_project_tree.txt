@@ -74,11 +74,13 @@
 │   │   │   ├── qa
 │   │   │   └── unit
 │   │   └── utils
+│   │       ├── chat_helpers.py
 │   │       ├── devtools.py
 │   │       ├── json_utils.py
 │   │       ├── model_router.py
 │   │       ├── monitor.py
-│   │       └── ollama_healthcheck.py
+│   │       ├── ollama_healthcheck.py
+│   │       └── query_helpers.py
 │   ├── backend_tree.txt
 │   ├── database.db
 │   ├── group_variables.txt
@@ -269,4 +271,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-69 directories, 201 files
+69 directories, 203 files
