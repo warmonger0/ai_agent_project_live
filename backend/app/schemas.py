@@ -39,7 +39,7 @@ class ChatMessage(ChatMessageBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True  # replaced orm_mode
+        from_attributes = True  # ✅ Replaces old orm_mode
 
 # --- Chat Schemas ---
 class ChatBase(BaseModel):
@@ -55,12 +55,12 @@ class Chat(ChatBase):
     messages: List[ChatMessage] = []
 
     class Config:
-        from_attributes = True  # replaced orm_mode
+        from_attributes = True  # ✅ Ensures datetime/ORM compatibility
 
 # --- Project Schemas ---
 class ProjectBase(BaseModel):
     name: str
-    understanding: Optional[str] = None  # ✅ support from creation
+    understanding: Optional[str] = None  # ✅ Editable project field
 
 class ProjectCreate(ProjectBase):
     pass
