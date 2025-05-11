@@ -13,7 +13,12 @@ export function useProjectsAndChats() {
   // Fetch all projects on mount
   useEffect(() => {
     fetch("/api/v1/chat/projects")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch projects: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(setProjects)
       .catch((err) => {
         console.error("Failed to load projects:", err);
@@ -29,7 +34,12 @@ export function useProjectsAndChats() {
     }
 
     fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch chats: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(setChats)
       .catch((err) => {
         console.error("Failed to load chats:", err);
@@ -42,9 +52,17 @@ export function useProjectsAndChats() {
     if (selectedProjectId === null) return;
 
     fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to refetch chats: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(setChats)
-      .catch(() => setChats([]));
+      .catch((err) => {
+        console.error("Refetch failed:", err);
+        setChats([]);
+      });
   }, [selectedProjectId]);
 
   return {
