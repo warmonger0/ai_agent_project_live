@@ -1,10 +1,9 @@
-// File: CreateChatForm.tsx
 import React, { useState } from "react";
 
-// ✅ Export Props for typing in test files
+// ✅ Export updated prop type
 export interface CreateChatFormProps {
   projectId: number | null;
-  onChatCreated: () => void;
+  onChatCreated: (chatId: number) => void; // Pass back the new chat ID
 }
 
 const CreateChatForm: React.FC<CreateChatFormProps> = ({
@@ -18,21 +17,20 @@ const CreateChatForm: React.FC<CreateChatFormProps> = ({
     if (!projectId || !trimmedTitle) return;
 
     try {
-      const res = await fetch("/api/v1/chat/chats/", {
+      const res = await fetch(`/api/v1/chat/projects/${projectId}/chats/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmedTitle,
-          project_id: projectId,
-        }),
+        body: JSON.stringify({ title: trimmedTitle }),
       });
 
-      if (res.ok) {
-        setNewChatTitle("");
-        onChatCreated();
-      } else {
+      if (!res.ok) {
         console.error("❌ Failed to create chat:", res.status);
+        return;
       }
+
+      const createdChat = await res.json(); // includes { id, title }
+      setNewChatTitle("");
+      onChatCreated(createdChat.id); // ✅ Trigger select with new ID
     } catch (err) {
       console.error("❌ Network error while creating chat:", err);
     }
