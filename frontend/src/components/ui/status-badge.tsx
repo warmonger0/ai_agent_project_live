@@ -1,3 +1,5 @@
+// File: src/components/ui/status-badge.tsx
+
 import { Badge } from "@/components/ui/badge";
 
 interface StatusBadgeProps {
@@ -12,7 +14,11 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       ? "destructive"
       : "outline";
 
-  return <Badge variant={variant}>{status}</Badge>;
+  return (
+    <Badge variant={variant} data-testid="status-badge">
+      {status}
+    </Badge>
+  );
 };
 
 export default StatusBadge;
