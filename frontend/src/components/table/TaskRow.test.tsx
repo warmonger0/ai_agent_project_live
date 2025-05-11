@@ -21,7 +21,7 @@ describe("TaskRow", () => {
 
     expect(screen.getByText("42")).toBeInTheDocument();
     expect(screen.getByText("Test deployment")).toBeInTheDocument();
-    screen.getByRole("status")).toHaveTextContent(
+    expect(screen.getByTestId("status-badge")).toHaveTextContent(
       "Status: error"
     );
   });
