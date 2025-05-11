@@ -38,14 +38,17 @@ export function useProjectsAndChats() {
   }, [selectedProjectId]);
 
   // Exposed manual reload function for parent components
-  const refetchChats = useCallback(() => {
-    if (selectedProjectId === null) return;
-
-    fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
-      .then((res) => res.json())
-      .then(setChats)
-      .catch(() => setChats([]));
-  }, [selectedProjectId]);
+  const fetchChats = (projectId) => {
+    fetch(`/api/v1/chat/projects/${projectId}/chats/`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => setChats(data))
+      .catch((err) => setError(err));
+  };
 
   return {
     projects,
