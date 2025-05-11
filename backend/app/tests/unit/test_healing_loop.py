@@ -41,23 +41,25 @@ async def test_healing_loop_skips_on_success():
     from backend.app.services import healing_loop
 
     mock_get = AsyncMock(return_value=MagicMock(status_code=200))
+    mock_info = MagicMock()
+
+    sleep_calls = 0
+
+    async def fake_sleep(_):
+        nonlocal sleep_calls
+        if sleep_calls == 0:
+            sleep_calls += 1
+            return  # allow first pass to run
+        raise asyncio.CancelledError()
 
     with patch("backend.app.services.healing_loop.httpx.AsyncClient.get", mock_get), \
-         patch.object(healing_loop.logger, "info") as mock_info, \
-         patch("backend.app.services.healing_loop.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-
-        # Force the sleep to raise after first loop to exit immediately
-        mock_sleep.side_effect = asyncio.CancelledError()
-
-        # Lower interval for test, just to be safe
-        healing_loop.CHECK_INTERVAL = 0
+         patch.object(healing_loop.logger, "info", mock_info), \
+         patch("backend.app.services.healing_loop.asyncio.sleep", new=fake_sleep):
 
         with pytest.raises(asyncio.CancelledError):
             await healing_loop.healing_loop()
 
-        # Show the actual call list if this fails again
         print("[DEBUG] logger.info calls:", mock_info.call_args_list)
 
-        # ✅ This *must* be in the logs now
         calls = [call.args[0] for call in mock_info.call_args_list]
         assert any("Health check passed" in c for c in calls)
