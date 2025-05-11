@@ -3,7 +3,7 @@ import { vi } from "vitest";
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import axios from "axios";
-import DeploymentLogs from "../../src/pages/DeploymentLogs";
+import DeploymentLogs from "@/pages/DeploymentLogs";
 
 // ✅ Mock axios
 vi.mock("axios");
