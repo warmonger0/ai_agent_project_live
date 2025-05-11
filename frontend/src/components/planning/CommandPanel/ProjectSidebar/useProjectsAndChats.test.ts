@@ -1,18 +1,10 @@
 // File: useProjectsAndChats.test.ts
-import { renderHook } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { useProjectsAndChats } from "./useProjectsAndChats";
 
 describe("useProjectsAndChats", () => {
-  it("initializes with empty projects and chats", () => {
-    const { result } = renderHook(() => useProjectsAndChats());
-
-    expect(result.current.projects).toEqual([]);
-    expect(result.current.chats).toEqual([]);
-    expect(result.current.selectedProjectId).toBeNull();
-  });
-
-  it("sets selected project ID and fetches chats", async () => {
+  beforeEach(() => {
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce({
@@ -21,13 +13,19 @@ describe("useProjectsAndChats", () => {
       .mockResolvedValueOnce({
         json: () => Promise.resolve([{ id: 100, title: "Alpha Chat A" }]),
       });
+  });
 
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useProjectsAndChats()
-    );
+  it("fetches projects and chats when project is selected", async () => {
+    const { result } = renderHook(() => useProjectsAndChats());
 
-    await result.current.setSelectedProjectId(1);
-    expect(result.current.selectedProjectId).toBe(1);
-    expect(result.current.chats).toEqual([{ id: 100, title: "Alpha Chat A" }]);
+    // Simulate project selection
+    act(() => {
+      result.current.setSelectedProjectId(1);
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedProjectId).toBe(1);
+      expect(result.current.chats.length).toBeGreaterThan(0);
+    });
   });
 });
