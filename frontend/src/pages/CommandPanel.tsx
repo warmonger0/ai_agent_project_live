@@ -6,13 +6,13 @@ import ProjectSidebar from "@/components/planning/CommandPanel/ProjectSidebar";
 
 const CommandPanel: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [topHeight, setTopHeight] = useState(60); // in %
+  const [topHeight, setTopHeight] = useState(60); // percent
   const isDragging = useRef(false);
 
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null
-  ); // 🆕
+  );
 
   const startDrag = (e: React.MouseEvent) => {
     isDragging.current = true;
@@ -46,17 +46,14 @@ const CommandPanel: React.FC = () => {
       <aside className="w-64 border-r border-gray-300 bg-white shadow-inner px-4 py-6">
         <ProjectSidebar
           selectedChatId={selectedChatId}
-          onSelectChat={(chatId) => setSelectedChatId(chatId)}
-          onSelectProject={(projectId) => {
-            setSelectedProjectId(projectId); // 🆕 track selected project
-            console.log("Selected Project:", projectId);
-          }}
+          onSelectChat={(id) => setSelectedChatId(id)}
+          onSelectProject={(id) => setSelectedProjectId(id)}
         />
       </aside>
 
-      {/* Main content column */}
+      {/* Main Content */}
       <div ref={containerRef} className="flex flex-col flex-1 p-4 space-y-0">
-        {/* Chat panel with adjustable height */}
+        {/* Chat Panel */}
         <div
           style={{ height: `${topHeight}%` }}
           className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden"
@@ -66,18 +63,18 @@ const CommandPanel: React.FC = () => {
           />
         </div>
 
-        {/* Drag handle */}
+        {/* Drag Handle */}
         <div
           onMouseDown={startDrag}
           className="h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"
         />
 
-        {/* Tabbed content */}
+        {/* Tabbed Panel (includes UnderstandingTab) */}
         <div
           style={{ height: `${100 - topHeight}%` }}
           className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden"
         >
-          <TabbedPanel />
+          <TabbedPanel projectId={selectedProjectId} />
         </div>
       </div>
 
