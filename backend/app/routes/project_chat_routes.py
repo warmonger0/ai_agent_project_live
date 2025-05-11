@@ -5,7 +5,7 @@ from typing import List
 
 from backend.app import crud, models, schemas
 from backend.app.db.session import get_db
-from backend.app.routes.deepseek_routes import query_deepseek  # ✅ Import DeepSeek helper
+from backend.app.routes.deepseek_routes import query_deepseek  # 🧠 Model call
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -70,31 +70,31 @@ def read_chat(chat_id: int, db: Session = Depends(get_db)):
 
 @router.post("/chats/{chat_id}/messages/", response_model=schemas.ChatMessage)
 def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
-    # ✅ Confirm chat exists
-    if not crud.get_chat(db=db, chat_id=chat_id):
+    # ✅ Validate chat
+    chat = crud.get_chat(db=db, chat_id=chat_id)
+    if chat is None:
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    # ✅ Store user message
+    # ✅ Save user message
     user_msg = crud.create_chat_message(
-        db=db, chat_id=chat_id, role="user", content=message.content
+        db=db, chat_id=chat_id, role=message.role or "user", content=message.content
     )
 
-    # ✅ Collect full chat history
+    # ✅ Fetch chat history
     messages = crud.get_messages_for_chat(db=db, chat_id=chat_id)
     history = [{"role": m.role, "content": m.content} for m in messages]
 
-    # ✅ Query DeepSeek for response
+    # ✅ Get AI response
     try:
         reply = query_deepseek(history)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DeepSeek error: {e}")
 
-    # ✅ Save assistant message
+    # ✅ Save assistant reply
     assistant_msg = crud.create_chat_message(
         db=db, chat_id=chat_id, role="assistant", content=reply
     )
 
-    # ✅ Return assistant message
     return assistant_msg
 
 @router.get("/chats/{chat_id}/messages/", response_model=List[schemas.ChatMessage])
