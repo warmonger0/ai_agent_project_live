@@ -40,7 +40,10 @@ app.add_exception_handler(RequestValidationError, error_handler.validation_excep
 app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
 
 # ✅ CORS setup
-allowed_origins = [settings.frontend_url] if settings.app_env == "production" else ["*"]
+allowed_origins = [
+    "https://192.168.50.142:5173",  # ✅ Explicitly allow Vite dev server
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
