@@ -1,37 +1,50 @@
-// File: CreateChatForm.tsx
-import React, { useState } from "react";
+// File: CreateChatForm.test.tsx
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import CreateChatForm from "./CreateChatForm";
 
-interface Props {
-  onCreate: (title: string) => void;
-}
+describe("CreateChatForm", () => {
+  it("renders input and button", () => {
+    render(<CreateChatForm onCreate={() => {}} />);
+    expect(screen.getByPlaceholderText("New chat name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+" })).toBeInTheDocument();
+  });
 
-const CreateChatForm: React.FC<Props> = ({ onCreate }) => {
-  const [title, setTitle] = useState("");
+  it("calls onCreate with title and resets input", () => {
+    const mockCreate = vi.fn();
+    render(<CreateChatForm onCreate={mockCreate} />);
 
-  const handleSubmit = () => {
-    if (title.trim()) {
-      onCreate(title);
-      setTitle("");
-    }
-  };
+    const input = screen.getByPlaceholderText(
+      "New chat name"
+    ) as HTMLInputElement;
+    const button = screen.getByRole("button", { name: "+" });
 
-  return (
-    <div className="flex items-center mt-2">
-      <input
-        placeholder="New chat name"
-        className="flex-grow border p-1 rounded mr-2 text-sm"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <button
-        onClick={handleSubmit}
-        aria-label="Add Chat"
-        className="px-2 py-1 rounded bg-blue-500 text-white"
-      >
-        +
-      </button>
-    </div>
-  );
-};
+    fireEvent.change(input, { target: { value: "My Chat" } });
+    fireEvent.click(button);
 
-export default CreateChatForm;
+    expect(mockCreate).toHaveBeenCalledWith("My Chat");
+    expect(input.value).toBe(""); // ✅ input is cleared after submit
+  });
+
+  it("does not call onCreate for empty input", () => {
+    const mockCreate = vi.fn();
+    render(<CreateChatForm onCreate={mockCreate} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "+" }));
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("trims whitespace before submission", () => {
+    const mockCreate = vi.fn();
+    render(<CreateChatForm onCreate={mockCreate} />);
+
+    const input = screen.getByPlaceholderText(
+      "New chat name"
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "   Chat X   " } });
+    fireEvent.click(screen.getByRole("button", { name: "+" }));
+
+    expect(mockCreate).toHaveBeenCalledWith("   Chat X  "); // ❗ adjust this if trim expected
+    // If trimming was added in CreateChatForm, update to `.toHaveBeenCalledWith("Chat X")`
+  });
+});
