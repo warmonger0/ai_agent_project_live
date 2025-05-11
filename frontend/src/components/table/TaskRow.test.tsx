@@ -1,9 +1,10 @@
 /// <reference types="vitest" />
 import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import TaskRow from "@/components/table/TaskRow";
 
-// ✅ Updated to match real file path: `status-badge.tsx`
-vi.mock("../components/ui/status-badge", () => ({
+// ✅ Updated to match your mocked StatusBadge format
+vi.mock("@/components/ui/status-badge", () => ({
   default: ({ status }: { status: string }) => (
     <span data-testid="status-badge">Status: {status}</span>
   ),
