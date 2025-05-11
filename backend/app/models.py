@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, JSON,
-    ForeignKey, Index
+    ForeignKey, Index, func
 )
 from sqlalchemy.orm import relationship
 from backend.app.db.session import Base
@@ -92,7 +92,6 @@ class ChatMessage(Base):
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
     role = Column(String, nullable=False)  # user or assistant
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     chat = relationship("Chat", back_populates="messages")
-
