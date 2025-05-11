@@ -12,7 +12,9 @@ describe("ChatMessage", () => {
 
     const message = screen.getByText("Hello from user");
     expect(message).toBeInTheDocument();
-    expect(message.closest("div")).toHaveClass("text-right");
+
+    const outer = message.closest("div")?.parentElement;
+    expect(outer).toHaveClass("text-right");
   });
 
   it("renders an assistant message with correct content and alignment", () => {
@@ -22,6 +24,8 @@ describe("ChatMessage", () => {
 
     const message = screen.getByText("Hello from AI");
     expect(message).toBeInTheDocument();
-    expect(message.closest("div")).toHaveClass("text-left");
+
+    const outer = message.closest("div")?.parentElement;
+    expect(outer).toHaveClass("text-left");
   });
 });
