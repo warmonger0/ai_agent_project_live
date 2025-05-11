@@ -16,6 +16,7 @@ from backend.app.api.v1 import api_router
 from backend.app.controllers import logs_controller, health_controller, status_controller
 from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
 from backend.app.routes import deepseek_routes
+from backend.app.routes import plugin_spec
 
 import asyncio
 import logging
