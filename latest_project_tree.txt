@@ -58,7 +58,9 @@
 │   │   │   ├── plugin_routes.py
 │   │   │   ├── plugin_spec.py
 │   │   │   ├── project_chat_routes
-│   │   │   └── project_chat_routes.py
+│   │   │   ├── project_chat_routes.py
+│   │   │   ├── test_deepseek_routes.py
+│   │   │   └── test_project_chat_routes.py
 │   │   ├── schemas.py
 │   │   ├── scripts
 │   │   │   └── inspect_db.py
@@ -246,6 +248,15 @@
 ├── primary_code_files.diff.txt
 ├── primary_code_files.ignore
 ├── primary_code_files.txt
+├── .pytest_cache
+│   ├── CACHEDIR.TAG
+│   ├── .gitignore
+│   ├── README.md
+│   └── v
+│       └── cache
+│           ├── lastfailed
+│           ├── nodeids
+│           └── stepwise
 ├── pytest.ini
 ├── README.md
 ├── requirements-dev.txt
@@ -271,4 +282,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-69 directories, 203 files
+72 directories, 211 files
