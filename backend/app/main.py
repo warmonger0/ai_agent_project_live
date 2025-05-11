@@ -34,6 +34,7 @@ app = FastAPI(
     version="1.0.0",
     description="Backend services for AI Agent task routing, plugin execution, and monitoring.",
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
