@@ -1,30 +1,40 @@
+// File: CreateChatForm.tsx
 import React, { useState } from "react";
 
-interface Props {
+// ✅ Export Props for typing in test files
+export interface CreateChatFormProps {
   projectId: number | null;
   onChatCreated: () => void;
 }
 
-const CreateChatForm: React.FC<Props> = ({ projectId, onChatCreated }) => {
+const CreateChatForm: React.FC<CreateChatFormProps> = ({
+  projectId,
+  onChatCreated,
+}) => {
   const [newChatTitle, setNewChatTitle] = useState("");
 
   const handleCreateChat = async () => {
-    if (!projectId || !newChatTitle.trim()) return;
+    const trimmedTitle = newChatTitle.trim();
+    if (!projectId || !trimmedTitle) return;
 
-    const res = await fetch("/api/v1/chat/chats/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newChatTitle.trim(),
-        project_id: projectId,
-      }),
-    });
+    try {
+      const res = await fetch("/api/v1/chat/chats/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedTitle,
+          project_id: projectId,
+        }),
+      });
 
-    if (res.ok) {
-      setNewChatTitle("");
-      onChatCreated();
-    } else {
-      console.error("Failed to create chat:", res.status);
+      if (res.ok) {
+        setNewChatTitle("");
+        onChatCreated();
+      } else {
+        console.error("❌ Failed to create chat:", res.status);
+      }
+    } catch (err) {
+      console.error("❌ Network error while creating chat:", err);
     }
   };
 
