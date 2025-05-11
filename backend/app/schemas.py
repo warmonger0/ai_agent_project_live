@@ -1,5 +1,3 @@
-# File: backend/app/schemas.py
-
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -36,10 +34,10 @@ class ChatMessageCreate(ChatMessageBase):
 class ChatMessage(ChatMessageBase):
     id: int
     chat_id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None  # ✅ Patch for CORS+500 error
 
     class Config:
-        from_attributes = True  # ✅ Replaces old orm_mode
+        from_attributes = True
 
 # --- Chat Schemas ---
 class ChatBase(BaseModel):
@@ -55,12 +53,12 @@ class Chat(ChatBase):
     messages: List[ChatMessage] = []
 
     class Config:
-        from_attributes = True  # ✅ Ensures datetime/ORM compatibility
+        from_attributes = True
 
 # --- Project Schemas ---
 class ProjectBase(BaseModel):
     name: str
-    understanding: Optional[str] = None  # ✅ Editable project field
+    understanding: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
     pass
