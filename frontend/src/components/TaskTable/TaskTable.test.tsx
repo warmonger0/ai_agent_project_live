@@ -6,9 +6,7 @@ import TaskTable from "@/components/TaskTable";
 
 vi.mock("../lib/services/taskService");
 
-const mockedFetchTasks = taskService.fetchTasks as unknown as ReturnType<
-  typeof vi.fn
->;
+const mockedFetchTasks = fetchTasks as unknown as ReturnType<typeof vi.fn>;
 
 describe("TaskTable", () => {
   beforeEach(() => {
