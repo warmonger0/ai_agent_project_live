@@ -12,14 +12,14 @@ describe("ChatMessageList", () => {
   ];
 
   it("renders all messages in the list", () => {
-    render(<ChatMessageList messages={messages} loading={false} />); // ✅ add `loading`
+    render(<ChatMessageList messages={messages} loading={false} />);
 
     expect(screen.getByText("Hello from user")).toBeInTheDocument();
     expect(screen.getByText("Hello from assistant")).toBeInTheDocument();
   });
 
   it("renders an empty state when there are no messages", () => {
-    render(<ChatMessageList messages={[]} loading={false} />); // ✅ add `loading`
+    render(<ChatMessageList messages={[]} loading={false} />);
     expect(screen.queryByText(/hello/i)).not.toBeInTheDocument();
   });
 });
