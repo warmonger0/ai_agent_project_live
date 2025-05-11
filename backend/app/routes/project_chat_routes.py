@@ -5,7 +5,8 @@ from typing import List
 
 from backend.app import crud, models, schemas
 from backend.app.db.session import get_db
-from backend.app.routes.deepseek_routes import query_deepseek  # 🧠 Model call
+from backend.app.utils.query_helpers import query_deepseek
+
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
