@@ -50,15 +50,17 @@ const ProjectSidebar: React.FC<Props> = ({
       </h3>
       <CreateChatForm
         projectId={selectedProjectId}
-        onChatCreated={async () => {
-          const res = await fetch(
-            `/api/v1/chat/projects/${selectedProjectId}/chats`
-          );
-          const updatedChats = await res.json();
-          setChats(updatedChats);
-
-          const newest = updatedChats[updatedChats.length - 1];
-          if (newest) onSelectChat(newest.id); // Set new chat as selected
+        onChatCreated={(newChatId) => {
+          fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
+            .then((res) => res.json())
+            .then((updatedChats) => {
+              setChats(updatedChats);
+              onSelectChat(newChatId); // ✅ set selected chat to the new one
+            })
+            .catch((err) => {
+              console.error("❌ Failed to refresh chats:", err);
+              setChats([]);
+            });
         }}
       />
       <ChatList
