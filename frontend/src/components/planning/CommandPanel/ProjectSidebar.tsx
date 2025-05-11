@@ -1,88 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useProjectsAndChats } from "./ProjectSidebar/useProjectsAndChats";
+import ChatList from "./ProjectSidebar/ChatList";
+import CreateChatForm from "./ProjectSidebar/CreateChatForm";
 
-// Types
-type Chat = {
-  id: number;
-  title: string;
-};
-
-type Project = {
-  id: number;
-  name: string;
-};
-
-interface ProjectSidebarProps {
+interface Props {
   selectedChatId: number | null;
-  onSelectChat: (chatId: number) => void;
-  onSelectProject: (projectId: number) => void;
+  onSelectChat: (id: number) => void;
+  onSelectProject: (id: number) => void;
 }
 
-const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
+const ProjectSidebar: React.FC<Props> = ({
   selectedChatId,
   onSelectChat,
   onSelectProject,
 }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    null
-  );
-  const [newChatTitle, setNewChatTitle] = useState("");
-
-  useEffect(() => {
-    fetch("/api/v1/chat/projects")
-      .then((res) => res.json())
-      .then((data) => {
-        setProjects(data);
-        console.log("📦 Projects loaded:", data);
-      })
-      .catch((err) => console.error("Failed to load projects:", err));
-  }, []);
-
-  useEffect(() => {
-    setChats([]); // ✅ Clear previous chats immediately
-    if (selectedProjectId === null) return;
-
-    fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
-      .then((res) => res.json())
-      .then((data) => {
-        setChats(data);
-        console.log(`💬 Chats for project ${selectedProjectId}:`, data);
-      })
-      .catch((err) => {
-        console.error("Failed to load chats:", err);
-        setChats([]); // ✅ Clear on failure too
-      });
-  }, [selectedProjectId]);
-
-  const handleCreateChat = async () => {
-    if (!selectedProjectId || !newChatTitle.trim()) return;
-
-    try {
-      const res = await fetch("/api/v1/chat/chats/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newChatTitle.trim(),
-          project_id: selectedProjectId,
-        }),
-      });
-
-      if (res.ok) {
-        setNewChatTitle("");
-        const updated = await fetch(
-          `/api/v1/chat/projects/${selectedProjectId}/chats`
-        );
-        const updatedChats = await updated.json();
-        setChats(updatedChats);
-        console.log("✨ Chat created and loaded:", updatedChats);
-      } else {
-        console.error("Failed to create chat:", res.status);
-      }
-    } catch (error) {
-      console.error("Chat creation error:", error);
-    }
-  };
+  const { projects, chats, setChats, selectedProjectId, setSelectedProjectId } =
+    useProjectsAndChats();
 
   return (
     <div className="w-64 border-r border-gray-200 p-4 bg-gray-50 dark:bg-gray-900">
@@ -105,53 +38,30 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         <option value="" disabled>
           Select a project
         </option>
-        {projects.map((project) => (
-          <option key={project.id} value={project.id}>
-            {project.name}
+        {projects.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
           </option>
         ))}
       </select>
 
-      <div>
-        <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-          Chats
-        </h3>
-
-        {/* ➕ Add new chat */}
-        <div className="flex gap-1 mb-3">
-          <input
-            type="text"
-            placeholder="New chat..."
-            value={newChatTitle}
-            onChange={(e) => setNewChatTitle(e.target.value)}
-            className="flex-1 border px-2 py-1 rounded text-sm"
-          />
-          <button
-            onClick={handleCreateChat}
-            className="text-xl px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-            title="Create Chat"
-          >
-            +
-          </button>
-        </div>
-
-        <ul className="space-y-2">
-          {chats.map((chat) => (
-            <li key={chat.id}>
-              <button
-                className={`w-full text-left px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-blue-800 ${
-                  selectedChatId === chat.id
-                    ? "bg-blue-200 dark:bg-blue-700 text-white"
-                    : ""
-                }`}
-                onClick={() => onSelectChat(chat.id)}
-              >
-                {chat.title || `Chat ${chat.id}`}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+        Chats
+      </h3>
+      <CreateChatForm
+        projectId={selectedProjectId}
+        onChatCreated={() => {
+          fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
+            .then((res) => res.json())
+            .then(setChats)
+            .catch(() => setChats([]));
+        }}
+      />
+      <ChatList
+        chats={chats}
+        selectedChatId={selectedChatId}
+        onSelectChat={onSelectChat}
+      />
     </div>
   );
 };
