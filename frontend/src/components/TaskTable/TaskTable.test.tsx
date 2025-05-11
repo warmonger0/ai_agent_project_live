@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import taskService from "@/lib/services/taskService";
+import { taskService } from "@/lib/services/taskService";
 import TaskTable from "@/components/TaskTable";
 
 vi.mock("../lib/services/taskService");
