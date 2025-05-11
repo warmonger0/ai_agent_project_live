@@ -9,6 +9,18 @@ from backend.app.routes.deepseek_routes import query_deepseek  # 🧠 Model call
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
+# ──────────────── Utility for External Usage (DeepSeek Streaming) ────────────────
+
+def save_chat_message(chat_id: int, content: str, role: str):
+    """
+    External-safe message saver — used in async stream generators.
+    """
+    db = next(get_db())
+    message = models.ChatMessage(chat_id=chat_id, content=content, role=role)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+
 # ──────────────── Project Endpoints ────────────────
 
 @router.post("/projects/", response_model=schemas.Project)
