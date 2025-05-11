@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { render, screen } from "@testing-library/react";
-import TaskDashboard from "../pages/TaskDashboard";
+import TaskDashboard from "@/pages/TaskDashboard";
 
 // ✅ Mock children to isolate the TaskDashboard layout
 vi.mock("../components/TaskTable", () => ({
