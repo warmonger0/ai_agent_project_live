@@ -1,4 +1,4 @@
-from backend.app.api.v1.planning import chat
+from backend.app.routes import deepseek_routes
 from fastapi import APIRouter
 
 from backend.app.controllers import (
@@ -25,4 +25,4 @@ api_router.include_router(status_controller.router, prefix="/status", tags=["sta
 
 # ✅ Grouped plugin routes under /api/v1/plugins/
 api_router.include_router(plugin_router, prefix="/plugins", tags=["plugins"])
-api_router.include_router(chat.router, prefix="/planning", tags=["planning"])
+api_router.include_router(deepseek_routes.router, prefix="/planning", tags=["planning"])
