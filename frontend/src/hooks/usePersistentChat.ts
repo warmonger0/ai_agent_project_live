@@ -46,7 +46,9 @@ function usePersistentChat(chatId: string | null) {
     try {
       const res = await axios.post(`/api/v1/chat/chats/${chatId}/messages/`, {
         content: input,
+        role: "user", // ✅ required field
       });
+
       setMessages((prev) => [...prev, res.data]);
     } catch (err) {
       console.error("❌ Send failed:", err);
