@@ -1,32 +1,37 @@
-// File: CreateChatForm.test.tsx
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import CreateChatForm from "./CreateChatForm";
+// File: CreateChatForm.tsx
+import React, { useState } from "react";
 
-describe("CreateChatForm", () => {
-  it("calls onCreate with entered chat title", () => {
-    const onCreate = vi.fn();
-    render(<CreateChatForm onCreate={onCreate} />);
+interface Props {
+  onCreate: (title: string) => void;
+}
 
-    const input = screen.getByPlaceholderText(/New chat name/i);
-    const button = screen.getByRole("button", { name: "+" });
+const CreateChatForm: React.FC<Props> = ({ onCreate }) => {
+  const [title, setTitle] = useState("");
 
-    fireEvent.change(input, { target: { value: "My New Chat" } });
-    fireEvent.click(button);
+  const handleSubmit = () => {
+    if (title.trim()) {
+      onCreate(title);
+      setTitle("");
+    }
+  };
 
-    expect(onCreate).toHaveBeenCalledWith("My New Chat");
-  });
+  return (
+    <div className="flex items-center mt-2">
+      <input
+        placeholder="New chat name"
+        className="flex-grow border p-1 rounded mr-2 text-sm"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <button
+        onClick={handleSubmit}
+        aria-label="Add Chat"
+        className="px-2 py-1 rounded bg-blue-500 text-white"
+      >
+        +
+      </button>
+    </div>
+  );
+};
 
-  it("clears input after create", () => {
-    const onCreate = vi.fn();
-    render(<CreateChatForm onCreate={onCreate} />);
-
-    const input = screen.getByPlaceholderText(/New chat name/i);
-    const button = screen.getByRole("button", { name: "+" });
-
-    fireEvent.change(input, { target: { value: "Chat to Clear" } });
-    fireEvent.click(button);
-
-    expect(input).toHaveValue("");
-  });
-});
+export default CreateChatForm;
