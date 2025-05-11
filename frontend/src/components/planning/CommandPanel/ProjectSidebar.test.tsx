@@ -9,6 +9,7 @@ beforeEach(() => {
 
     if (url === "/api/v1/chat/projects") {
       return Promise.resolve({
+        ok: true,
         json: () =>
           Promise.resolve([
             { id: 1, name: "Project Alpha" },
@@ -19,6 +20,7 @@ beforeEach(() => {
 
     if (url === "/api/v1/chat/projects/1/chats") {
       return Promise.resolve({
+        ok: true,
         json: () =>
           Promise.resolve([
             { id: 101, title: "Alpha Chat 1" },
@@ -29,6 +31,7 @@ beforeEach(() => {
 
     if (url === "/api/v1/chat/projects/2/chats") {
       return Promise.resolve({
+        ok: true,
         json: () => Promise.resolve([{ id: 201, title: "Beta Chat 1" }]),
       }) as unknown as Response;
     }
@@ -43,12 +46,12 @@ describe("ProjectSidebar", () => {
       <ProjectSidebar
         selectedChatId={null}
         onSelectChat={() => {}}
-        onSelectProject={() => {}} // ✅ required now
+        onSelectProject={() => {}}
       />
     );
 
     const select = await screen.findByLabelText(/select project/i);
-    fireEvent.change(select, { target: { value: "1" } });
+    fireEvent.change(select, { target: { value: "1" } }); // ensure it's a string that parses to 1
 
     const chats = await screen.findAllByRole("button", { name: /Alpha Chat/i });
     expect(chats.map((el) => el.textContent)).toEqual([
@@ -64,7 +67,7 @@ describe("ProjectSidebar", () => {
       <ProjectSidebar
         selectedChatId={null}
         onSelectChat={onSelectChat}
-        onSelectProject={() => {}} // ✅ required now
+        onSelectProject={() => {}}
       />
     );
 
