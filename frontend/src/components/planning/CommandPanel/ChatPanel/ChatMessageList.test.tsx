@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import ChatMessageList from "@/components/planning/CommandPanel/ChatPanel/ChatMessageList";
-import type { ChatMessage } from "@/types"; // ✅ fixed import
+import type { ChatMessage } from "./types"; // ✅ fixed import
 
 describe("ChatMessageList", () => {
   const messages: ChatMessage[] = [
