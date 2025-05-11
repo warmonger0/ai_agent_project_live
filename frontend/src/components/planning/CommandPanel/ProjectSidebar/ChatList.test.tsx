@@ -1,6 +1,6 @@
 // File: ChatList.test.tsx
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import ChatList from "./ChatList";
 
 const chats = [
@@ -33,5 +33,17 @@ describe("ChatList", () => {
     );
     const selected = screen.getByText("Chat Two");
     expect(selected.className).toMatch(/bg-blue-200/);
+  });
+
+  it("falls back to default chat label when title is empty", () => {
+    const fallbackChats = [{ id: 3, title: "" }];
+    render(
+      <ChatList
+        chats={fallbackChats}
+        selectedChatId={null}
+        onSelectChat={() => {}}
+      />
+    );
+    expect(screen.getByText("Chat 3")).toBeInTheDocument();
   });
 });
