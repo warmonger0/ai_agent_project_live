@@ -13,10 +13,9 @@ from backend.app.models import Task
 from backend.app.services.healing_loop import healing_loop
 
 from backend.app.api.v1 import api_router
-from backend.app.controllers import logs_controller, health_controller, status_controller
+from backend.app.controllers import logs_controller
 from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
 from backend.app.routes import deepseek_routes
-from backend.app.routes import plugin_spec
 from backend.app.routes import plugin_routes
 
 import asyncio
@@ -63,9 +62,6 @@ app.include_router(api_router, prefix="/api/v1")
 app.include_router(logs_controller.router)  # Mount /logs route
 app.include_router(project_chat_routes.router, prefix="/api/v1")  # ✅ Mount chat routes
 app.include_router(deepseek_routes.router, prefix="/api/v1", tags=["deepseek"])
-app.include_router(health_controller.router, prefix="/api/v1")
-app.include_router(status_controller.router, prefix="/api/v1")
-app.include_router(plugin_spec.router, prefix="/api/v1", tags=["plugin"])
 app.include_router(plugin_routes.router, prefix="/api/v1")
 
 # ✅ Root route
