@@ -69,12 +69,15 @@
 │   │   │   ├── healing_loop.py
 │   │   │   ├── __init__.py
 │   │   │   └── plugin_runner.py
+│   │   ├── test_crud.py
+│   │   ├── test_models.py
 │   │   ├── tests
 │   │   │   ├── conftest.py
 │   │   │   ├── coverage_summary.json
 │   │   │   ├── integration
 │   │   │   ├── qa
 │   │   │   └── unit
+│   │   ├── test_schemas.py
 │   │   └── utils
 │   │       ├── chat_helpers.py
 │   │       ├── devtools.py
@@ -149,6 +152,7 @@
 │   │   └── .gitkeep
 │   └── logs
 │       ├── deployment_2025-04-22T03-32-37.log
+│       ├── deployment_2025-05-11T02-16-10.log
 │       └── .gitkeep
 ├── docker
 │   └── deepseek
@@ -231,6 +235,7 @@
 │   ├── vitest.config.ts
 │   └── vitest.setup.ts
 ├── .gitignore
+├── GPT_README.md
 ├── healing.log
 ├── h origin temp-live:main --force
 ├── latest_project_tree.txt
@@ -282,4 +287,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-72 directories, 211 files
+72 directories, 216 files
