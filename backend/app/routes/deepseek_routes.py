@@ -6,7 +6,7 @@ import logging
 import asyncio
 import json
 
-from backend.app.routes.project_chat_routes.chat_helpers import save_chat_message
+from backend/app/utils/chat_helpers.chat_helpers import save_chat_message
 
 router = APIRouter()
 
