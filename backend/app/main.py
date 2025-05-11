@@ -17,6 +17,7 @@ from backend.app.controllers import logs_controller, health_controller, status_c
 from backend.app.routes import project_chat_routes  # ✅ New import for chat endpoints
 from backend.app.routes import deepseek_routes
 from backend.app.routes import plugin_spec
+from backend.app.routes import plugin_routes
 
 import asyncio
 import logging
@@ -65,6 +66,8 @@ app.include_router(deepseek_routes.router, prefix="/api/v1", tags=["deepseek"])
 app.include_router(health_controller.router, prefix="/api/v1")
 app.include_router(status_controller.router, prefix="/api/v1")
 app.include_router(plugin_spec.router, prefix="/api/v1", tags=["plugin"])
+app.include_router(plugin_routes.router, prefix="/api/v1")
+
 
 
 # ✅ Root route
