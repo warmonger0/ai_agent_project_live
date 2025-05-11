@@ -2,7 +2,7 @@
 import { vi } from "vitest";
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import SystemHealth from "../pages/SystemHealth";
+import SystemHealth from "@/pages/SystemHealth";
 import * as apiModule from "@/lib/services/api";
 
 // ✅ Mock both the axios instance and unwrapApiResponse
@@ -16,7 +16,9 @@ vi.mock("@/lib/services/api", async () => {
 });
 
 describe("SystemHealth", () => {
-  const mockedGet = apiModule.default.get as unknown as ReturnType<typeof vi.fn>;
+  const mockedGet = apiModule.default.get as unknown as ReturnType<
+    typeof vi.fn
+  >;
 
   beforeEach(() => {
     mockedGet.mockReset();
