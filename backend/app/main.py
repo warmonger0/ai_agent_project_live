@@ -68,8 +68,6 @@ app.include_router(status_controller.router, prefix="/api/v1")
 app.include_router(plugin_spec.router, prefix="/api/v1", tags=["plugin"])
 app.include_router(plugin_routes.router, prefix="/api/v1")
 
-
-
 # ✅ Root route
 @app.get("/")
 async def root():
