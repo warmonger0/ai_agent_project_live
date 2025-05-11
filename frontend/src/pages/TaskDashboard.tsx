@@ -1,3 +1,5 @@
+// File: src/pages/TaskDashboard.tsx
+
 import TaskTable from "@/components/TaskTable";
 import PluginPanel from "@/components/PluginPanel";
 import PluginHistory from "@/components/PluginHistory";
@@ -10,9 +12,17 @@ export default function TaskDashboard() {
           Task Dashboard
         </h1>
 
-        <TaskTable />
-        <PluginPanel />
-        <PluginHistory />
+        <div data-testid="TaskTable">
+          <TaskTable />
+        </div>
+
+        <div data-testid="PluginPanel">
+          <PluginPanel />
+        </div>
+
+        <div data-testid="PluginHistory">
+          <PluginHistory />
+        </div>
       </div>
     </div>
   );
