@@ -27,6 +27,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null
   );
+  const [newChatTitle, setNewChatTitle] = useState("");
 
   useEffect(() => {
     fetch("/api/v1/chat/projects")
@@ -39,10 +40,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   }, []);
 
   useEffect(() => {
-    if (selectedProjectId === null) {
-      setChats([]);
-      return;
-    }
+    setChats([]); // ✅ Clear previous chats immediately
+    if (selectedProjectId === null) return;
 
     fetch(`/api/v1/chat/projects/${selectedProjectId}/chats`)
       .then((res) => res.json())
@@ -50,8 +49,40 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         setChats(data);
         console.log(`💬 Chats for project ${selectedProjectId}:`, data);
       })
-      .catch((err) => console.error("Failed to load chats:", err));
+      .catch((err) => {
+        console.error("Failed to load chats:", err);
+        setChats([]); // ✅ Clear on failure too
+      });
   }, [selectedProjectId]);
+
+  const handleCreateChat = async () => {
+    if (!selectedProjectId || !newChatTitle.trim()) return;
+
+    try {
+      const res = await fetch("/api/v1/chat/chats/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newChatTitle.trim(),
+          project_id: selectedProjectId,
+        }),
+      });
+
+      if (res.ok) {
+        setNewChatTitle("");
+        const updated = await fetch(
+          `/api/v1/chat/projects/${selectedProjectId}/chats`
+        );
+        const updatedChats = await updated.json();
+        setChats(updatedChats);
+        console.log("✨ Chat created and loaded:", updatedChats);
+      } else {
+        console.error("Failed to create chat:", res.status);
+      }
+    } catch (error) {
+      console.error("Chat creation error:", error);
+    }
+  };
 
   return (
     <div className="w-64 border-r border-gray-200 p-4 bg-gray-50 dark:bg-gray-900">
@@ -85,6 +116,25 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
           Chats
         </h3>
+
+        {/* ➕ Add new chat */}
+        <div className="flex gap-1 mb-3">
+          <input
+            type="text"
+            placeholder="New chat..."
+            value={newChatTitle}
+            onChange={(e) => setNewChatTitle(e.target.value)}
+            className="flex-1 border px-2 py-1 rounded text-sm"
+          />
+          <button
+            onClick={handleCreateChat}
+            className="text-xl px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+            title="Create Chat"
+          >
+            +
+          </button>
+        </div>
+
         <ul className="space-y-2">
           {chats.map((chat) => (
             <li key={chat.id}>
