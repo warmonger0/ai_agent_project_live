@@ -57,6 +57,7 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(logs_controller.router)  # Mount /logs route
 app.include_router(project_chat_routes.router, prefix="/api/v1")  # ✅ Mount chat routes
+app.include_router(deepseek_routes.router, prefix="/api/v1", tags=["deepseek"])
 
 # ✅ Root route
 @app.get("/")
