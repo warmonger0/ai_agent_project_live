@@ -14,29 +14,34 @@ function usePersistentChat(chatId: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch chat messages on chatId change
+  // Fetch chat messages when chatId changes
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId) {
+      setMessages([]);
+      return;
+    }
 
     setLoading(true);
     axios
       .get(`/api/v1/chat/chats/${chatId}/messages/`)
       .then((res) => setMessages(res.data))
       .catch((err) => {
-        console.error("Failed to fetch messages:", err);
+        console.error("❌ Failed to fetch messages:", err);
         setError("Failed to load messages.");
+        setMessages([]);
       })
       .finally(() => setLoading(false));
   }, [chatId]);
 
-  // Send a new message to the backend
+  // Send a new message
   const handleSend = async () => {
     if (!input.trim() || !chatId) return;
-    const userMsg: ChatMessage = { role: "user", content: input };
 
-    setLoading(true);
-    setInput("");
+    const userMsg: ChatMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await axios.post(`/api/v1/chat/chats/${chatId}/messages/`, {
@@ -44,20 +49,18 @@ function usePersistentChat(chatId: string | null) {
       });
       setMessages((prev) => [...prev, res.data]);
     } catch (err) {
-      console.error("Send error:", err);
+      console.error("❌ Send failed:", err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "❌ Error sending message." },
       ]);
+      setError("Failed to send message.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Clear history (for UI only – doesn't hit backend)
-  const clearMessages = () => {
-    setMessages([]);
-  };
+  const clearMessages = () => setMessages([]);
 
   return {
     messages,
