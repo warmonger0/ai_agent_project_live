@@ -89,6 +89,7 @@
 │   │       ├── 2d69244356e1_add_error_message_timestamp_completed_.py
 │   │       ├── 3fc49bfa94a6_initial_model_baseline.py
 │   │       ├── 506e04309528_fix_chat_title_and_add_timestamp_to_.py
+│   │       ├── 6b9b4325395a_add_understanding_to_project.py
 │   │       ├── afda61306ff8_merge_plugin_and_chat_schema_heads.py
 │   │       ├── f4fa5b30e239_initial_tables_task_and_pluginexecution.py
 │   │       └── ff12ad0ec871_fix_chatmessage_to_use_created_at.py
@@ -200,6 +201,7 @@
 │   │   │   └── utils.ts
 │   │   ├── main.tsx
 │   │   ├── pages
+│   │   │   ├── CommandPanel.test.tsx
 │   │   │   ├── CommandPanel.tsx
 │   │   │   ├── DeploymentLogs.tsx
 │   │   │   ├── SystemHealth
@@ -264,4 +266,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-71 directories, 194 files
+71 directories, 196 files
