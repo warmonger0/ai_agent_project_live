@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { describe, it, expect, vi } from "vitest";
-import api from "../api";
-import { fetchTasks, retryTask, createTask } from "../taskService";
+import api from "./api";
+import { fetchTasks, retryTask, createTask } from "./taskService";
 
 vi.mock("../api", () => ({
   default: {
