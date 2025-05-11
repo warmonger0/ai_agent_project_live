@@ -17,7 +17,13 @@ const sendChatMessage = async (
   baseUrlOverride?: string,
   onStreamChunk?: (chunk: string) => void
 ): Promise<ChatResponse> => {
-  const API_BASE_URL = baseUrlOverride ?? import.meta.env.VITE_API_BASE_URL;
+  let rawUrl = baseUrlOverride ?? import.meta.env.VITE_API_BASE_URL;
+
+  if (!rawUrl || rawUrl === "__MISSING__") {
+    throw new Error("VITE_API_BASE_URL is not defined");
+  }
+
+  const API_BASE_URL = rawUrl.replace("http://", "https://");
 
   if (!API_BASE_URL || API_BASE_URL === "__MISSING__") {
     throw new Error("VITE_API_BASE_URL is not defined");
