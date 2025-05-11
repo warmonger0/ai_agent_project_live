@@ -1,9 +1,9 @@
-// File: /frontend/src/__tests__/commandPanel/ChatMessageList.test.tsx
+// File: ChatMessageList.test.tsx
 
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import ChatMessageList from "@/components/planning/CommandPanel/ChatPanel/ChatMessageList";
-import type { ChatMessage } from "./types"; // ✅ fixed import
+import ChatMessageList from "./ChatMessageList"; // ✅ local file
+import type { ChatMessage } from "@/components/planning/CommandPanel/ChatPanel/types"; // ✅ fix path
 
 describe("ChatMessageList", () => {
   const messages: ChatMessage[] = [
