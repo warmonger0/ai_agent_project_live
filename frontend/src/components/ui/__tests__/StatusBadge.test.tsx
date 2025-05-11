@@ -2,7 +2,7 @@
 
 /// <reference types="vitest" />
 import { render, screen } from "@testing-library/react";
-import StatusBadge from "../components/ui/status-badge";
+import StatusBadge from "@/components/ui/status-badge";
 
 describe("StatusBadge", () => {
   it("renders a success badge", () => {
