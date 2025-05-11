@@ -1,0 +1,10 @@
+# File: .gitlocalinclude (for your tracking)
+
+backend/database.db
+frontend/.env
+frontend/.env.test.local
+frontend/key.pem
+frontend/cert.pem
+healing.log
+logs/
+deployments/logs/
