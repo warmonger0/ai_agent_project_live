@@ -5,6 +5,7 @@ from typing import List
 
 from backend.app import crud, models, schemas
 from backend.app.db.session import get_db
+from backend.app.routes.deepseek_routes import query_deepseek
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -69,9 +70,30 @@ def read_chat(chat_id: int, db: Session = Depends(get_db)):
 
 @router.post("/chats/{chat_id}/messages/", response_model=schemas.ChatMessage)
 def create_message(chat_id: int, message: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
-    if not crud.get_chat(db=db, chat_id=chat_id):
+    # ✅ Validate chat
+    chat = crud.get_chat(db=db, chat_id=chat_id)
+    if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
-    return crud.create_chat_message(db=db, chat_id=chat_id, role=message.role, content=message.content)
+
+    # ✅ Save user message
+    user_msg = crud.create_chat_message(db=db, chat_id=chat_id, role="user", content=message.content)
+
+    # ✅ Gather full history
+    history = crud.get_messages_for_chat(db=db, chat_id=chat_id)
+
+    # ✅ Call DeepSeek with all history
+    try:
+        deepseek_response = query_deepseek(history)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DeepSeek error: {e}")
+
+    # ✅ Save assistant message
+    assistant_msg = crud.create_chat_message(
+        db=db, chat_id=chat_id, role="assistant", content=deepseek_response
+    )
+
+    # ✅ Return assistant response to frontend
+    return assistant_msg
 
 @router.get("/chats/{chat_id}/messages/", response_model=List[schemas.ChatMessage])
 def read_messages(chat_id: int, db: Session = Depends(get_db)):
