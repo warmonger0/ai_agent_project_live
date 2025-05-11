@@ -57,6 +57,7 @@
 │   │   │   ├── plugin_list.py
 │   │   │   ├── plugin_routes.py
 │   │   │   ├── plugin_spec.py
+│   │   │   ├── project_chat_routes
 │   │   │   └── project_chat_routes.py
 │   │   ├── schemas.py
 │   │   ├── scripts
@@ -268,4 +269,4 @@
     ├── status-check.sh
     └── sync_watcher.py
 
-68 directories, 201 files
+69 directories, 201 files
