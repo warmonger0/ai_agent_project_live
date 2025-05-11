@@ -64,6 +64,8 @@ app.include_router(project_chat_routes.router, prefix="/api/v1")  # ✅ Mount ch
 app.include_router(deepseek_routes.router, prefix="/api/v1", tags=["deepseek"])
 app.include_router(health_controller.router, prefix="/api/v1")
 app.include_router(status_controller.router, prefix="/api/v1")
+app.include_router(plugin_spec.router, prefix="/api/v1", tags=["plugin"])
+
 
 # ✅ Root route
 @app.get("/")
