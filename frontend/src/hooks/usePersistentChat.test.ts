@@ -38,7 +38,7 @@ describe("usePersistentChat", () => {
   });
 
   it("handles message sending", async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: [] }); // Prevent undefined error
+    mockedAxios.get.mockResolvedValueOnce({ data: [] }); // Initial load
     mockedAxios.post.mockResolvedValueOnce({
       data: { id: "3", role: "assistant", content: "Got it." },
     });
@@ -55,9 +55,10 @@ describe("usePersistentChat", () => {
       await result.current.handleSend();
     });
 
+    // ✅ FIX: expect role to be present in post body
     expect(mockedAxios.post).toHaveBeenCalledWith(
       `/api/v1/chat/chats/${mockChatId}/messages/`,
-      { content: "Hey" }
+      { content: "Hey", role: "user" }
     );
 
     const sentMessages = result.current.messages;
