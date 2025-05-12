@@ -31,7 +31,6 @@ def test_list_logs_missing_dir():
         assert response.status_code == 500
         assert "Logs directory not found" in response.json().get("detail", "")
 
-
 def test_get_log_file_success(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
     log_dir.mkdir(parents=True)
