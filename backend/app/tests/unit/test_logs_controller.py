@@ -26,7 +26,8 @@ def test_list_logs(tmp_path):
 def test_list_logs_missing_dir():
     fake_path = Path("/nonexistent_dir")
 
-    with mock.patch.object(logs, "LOG_DIR", fake_path):
+    with mock.patch.object(logs, "LOG_DIR", fake_path), \
+         mock.patch("os.path.isdir", return_value=False):
         response = client.get("/api/v1/logs/")
         assert response.status_code == 500
         assert "Logs directory not found" in response.json()["detail"]
