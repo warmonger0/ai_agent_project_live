@@ -3,9 +3,9 @@ from unittest.mock import patch, MagicMock
 from backend.app.plugins.runner import run_plugin_job
 
 
+@patch("backend.app.plugins.loader.run_plugin")  # 🟢 Corrected path
 @patch("backend.app.plugins.runner.SessionLocal")
-@patch("backend.app.plugins.runner.run_plugin")
-def test_run_plugin_job_success(mock_run_plugin, mock_session):
+def test_run_plugin_job_success(mock_session, mock_run_plugin):
     mock_run_plugin.return_value = {"result": "ok"}
     mock_db = MagicMock()
     mock_session.return_value = mock_db
@@ -19,9 +19,9 @@ def test_run_plugin_job_success(mock_run_plugin, mock_session):
     mock_db.close.assert_called_once()
 
 
+@patch("backend.app.plugins.loader.run_plugin")  # 🟢 Corrected path
 @patch("backend.app.plugins.runner.SessionLocal")
-@patch("backend.app.plugins.runner.run_plugin")
-def test_run_plugin_job_failure(mock_run_plugin, mock_session):
+def test_run_plugin_job_failure(mock_session, mock_run_plugin):
     mock_run_plugin.side_effect = Exception("fail")
     mock_db = MagicMock()
     mock_session.return_value = mock_db
