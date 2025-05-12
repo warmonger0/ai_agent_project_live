@@ -1,24 +1,28 @@
 from fastapi.testclient import TestClient
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
+from backend.app.controllers.healing_controller import router
 from fastapi import FastAPI
-from backend.app.controllers.health_controller import router
 
 app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
 
-@patch("backend.app.controllers.health_controller.check_ollama_health", return_value=True)
-def test_health_check_model_ok(mock_health):
-    res = client.get("/health")
+@patch("os.path.exists", return_value=True)
+@patch("builtins.open", new_callable=mock_open, read_data="line1\nline2\nline3\n")
+def test_get_healing_status_success(mock_file, mock_exists):
+    res = client.get("/healing/status")
     assert res.status_code == 200
-    data = res.json()
-    assert data["backend"] == "OK"
-    assert data["model"] == "OK"
+    assert res.json() == {"logs": ["line1", "line2", "line3"]}
 
-@patch("backend.app.controllers.health_controller.check_ollama_health", return_value=False)
-def test_health_check_model_fail(mock_health):
-    res = client.get("/health")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["backend"] == "OK"
-    assert data["model"] == "FAIL"
+@patch("os.path.exists", return_value=False)
+def test_get_healing_status_missing_log(mock_exists):
+    res = client.get("/healing/status")
+    assert res.status_code == 404
+    assert "Healing log not found" in res.text
+
+@patch("os.path.exists", return_value=True)
+@patch("builtins.open", side_effect=OSError("read failure"))
+def test_get_healing_status_read_failure(mock_file, mock_exists):
+    res = client.get("/healing/status")
+    assert res.status_code == 500
+    assert "read failure" in res.text
