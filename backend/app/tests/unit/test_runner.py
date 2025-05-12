@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from backend.app.services.plugin_runner import run_plugin_job
-from backend.app.db.database import SessionLocal
+from backend.app.db import SessionLocal
 
 
 @patch("backend.app.services.plugin_runner.SessionLocal")
