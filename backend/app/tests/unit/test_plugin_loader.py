@@ -74,18 +74,17 @@ def test_plugin_discovery():
 def test_run_plugin_success(temp_plugin_dir):
     create_plugin_runner(temp_plugin_dir)
     create_plugin_file(
-    temp_plugin_dir,
-    "test_success",
-    """
+        temp_plugin_dir,
+        "test_success",
+        """
 class Plugin:
     def run(self, input_data):
         return "HELLO"
 """
-)
-    result = plugin_loader.run_plugin("test_success", "hello", plugin_dir=temp_plugin_dir)
-    assert result["ok"] is True
+    )
+    result = plugin_loader.run_plugin("test_success", '"hello"', plugin_dir=temp_plugin_dir)
+    assert result["ok"] is True, f"Unexpected failure: {result}"
     assert result["result"] == "HELLO"
-
 
 def test_run_plugin_not_found(temp_plugin_dir):
     result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
