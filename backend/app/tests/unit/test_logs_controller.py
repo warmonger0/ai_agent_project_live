@@ -21,19 +21,26 @@ def test_list_logs(tmp_path):
         assert response.json()["ok"] is True
         assert "test.log" in response.json()["data"]
 
-def test_list_logs_missing_dir(monkeypatch):
-    from backend.app.routes import logs  # re-import to ensure fresh scope
+def test_list_logs_missing_dir(tmp_path, monkeypatch):
+    # Patch the target LOG_DIR to a valid but empty tmp path to isolate behavior
+    from backend.app.routes import logs
+    monkeypatch.setattr(logs, "LOG_DIR", tmp_path / "nonexistent")
 
-    fake_path = Path("/nonexistent_dir")
-    monkeypatch.setattr(logs, "LOG_DIR", fake_path)
+    # Also mock os.path.isdir to return False regardless
     monkeypatch.setattr(os.path, "isdir", lambda _: False)
 
-    test_client = TestClient(app)  # re-instantiate after monkeypatching
+    # Create a new isolated app that registers the route *after* patches
+    from fastapi import FastAPI
+    from backend.app.routes.logs import router
 
-    response = test_client.get("/api/v1/logs/")
-    print("[DEBUG]", response.json())
-    assert response.status_code == 500
-    assert "Logs directory not found" in response.json().get("detail", "")
+    test_app = FastAPI()
+    test_app.include_router(router, prefix="/api/v1/logs")
+    test_client = TestClient(test_app)
+
+    res = test_client.get("/api/v1/logs/")
+    print("[DEBUG]", res.json())
+    assert res.status_code == 500
+    assert "Logs directory not found" in res.json().get("detail", "")
 
 def test_get_log_file_success(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
