@@ -42,7 +42,6 @@ def test_get_log_file_success(tmp_path):
         assert response.status_code == 200
         assert response.text == "test log\n"
 
-
 def test_get_log_file_not_found():
     fake_path = Path("/missing_dir")
 
