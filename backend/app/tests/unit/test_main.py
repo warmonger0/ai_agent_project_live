@@ -6,6 +6,15 @@ from typing import Any  # used for plugin interface compatibility
 
 client = TestClient(app)
 
+from unittest.mock import patch
+
+@patch("backend.app.core.config.settings.app_env", "test")
+def test_root_route():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "message" in response.json()
+    assert "test" in response.json()["message"]
+
 def test_root_route():
     response = client.get("/")
     assert response.status_code == 200
@@ -20,4 +29,4 @@ def test_cors_headers_present():
     response = client.options("/", headers={"Origin": "http://testclient"})
     assert "access-control-allow-origin" in response.headers
 
-@patch("backend.app.core.config.settings.vite_api_base_url", "http://localhost:5173")
+
