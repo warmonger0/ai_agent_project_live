@@ -4,21 +4,25 @@ import tempfile
 import shutil
 from backend.app.plugins import loader as plugin_loader
 
+
 @pytest.fixture
 def temp_plugin_dir():
     temp_dir = tempfile.mkdtemp()
     yield temp_dir
     shutil.rmtree(temp_dir)
 
+
 def create_plugin_file(dir_path, name, content):
     path = os.path.join(dir_path, f"{name}.py")
     with open(path, "w") as f:
         f.write(content.strip() + "\n")
 
+
 def create_plugin_runner(dir_path):
     runner_path = os.path.join(dir_path, "runner.py")
     with open(runner_path, "w") as f:
-        f.write("""
+        f.write(
+            """
 import sys
 import os
 import importlib.util
@@ -56,66 +60,67 @@ if __name__ == "__main__":
     except Exception as e:
         error_info = traceback.format_exc()
         print(json.dumps({"ok": False, "error": str(e), "traceback": error_info}))
-""")
+"""
+        )
+
 
 def test_plugin_discovery():
     plugins_list = plugin_loader.discover_plugins()
     names = [p["name"].lower() for p in plugins_list]
     assert "echo" in names, f"Available plugins: {names}"
 
+
 def test_run_plugin_success(temp_plugin_dir):
     create_plugin_runner(temp_plugin_dir)
-    create_plugin_file(temp_plugin_dir, "test_success", """
+    create_plugin_file(
+        temp_plugin_dir,
+        "test_success",
+        """
 class TestSuccess:
     def run(self, input_data):
         return "HELLO"
-
-if __name__ == "__main__":
-    import sys, json
-    result = TestSuccess().run(sys.argv[1])
-    print(json.dumps({"ok": True, "result": result}))
-""")
+""",
+    )
     result = plugin_loader.run_plugin("test_success", "hello", plugin_dir=temp_plugin_dir)
-    assert result["ok"] is True, f"Unexpected result: {result}"
+    assert result["ok"] is True
     assert result["result"] == "HELLO"
+
 
 def test_run_plugin_not_found(temp_plugin_dir):
     result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
     assert "not found" in result.get("error", "").lower()
 
+
 def test_run_plugin_crash(temp_plugin_dir):
     create_plugin_runner(temp_plugin_dir)
-    create_plugin_file(temp_plugin_dir, "test_crash", """
+    create_plugin_file(
+        temp_plugin_dir,
+        "test_crash",
+        """
 class TestCrash:
     def run(self, input_data):
         raise Exception("Crash test")
-
-if __name__ == "__main__":
-    import sys, json
-    try:
-        TestCrash().run(sys.argv[1])
-    except Exception as e:
-        print(json.dumps({"ok": False, "error": str(e)}))
-""")
+""",
+    )
     result = plugin_loader.run_plugin("test_crash", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
     assert "error" in result
 
+
 def test_run_plugin_timeout(temp_plugin_dir):
     create_plugin_runner(temp_plugin_dir)
-    create_plugin_file(temp_plugin_dir, "test_timeout", """
+    create_plugin_file(
+        temp_plugin_dir,
+        "test_timeout",
+        """
 class TestTimeout:
     def run(self, input_data):
         import time
         time.sleep(10)
         return "done"
-
-if __name__ == "__main__":
-    import sys, json
-    result = TestTimeout().run(sys.argv[1])
-    print(json.dumps({"ok": True, "result": result}))
-""")
+""",
+    )
     result = plugin_loader.run_plugin("test_timeout", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
     assert "error" in result
