@@ -9,11 +9,6 @@ client = TestClient(app)
 from unittest.mock import patch
 
 @patch("backend.app.core.config.settings.app_env", "test")
-def test_root_route():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "message" in response.json()
-    assert "test" in response.json()["message"]
 
 def test_root_route():
     response = client.get("/")
