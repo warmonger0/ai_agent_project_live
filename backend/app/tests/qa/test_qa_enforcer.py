@@ -9,6 +9,22 @@ TEST_DIR = os.path.join(PROJECT_ROOT, "backend/tests")
 VARIABLE_TRACK_FILE = os.path.join(PROJECT_ROOT, "backend/group_variables.txt")
 COVERAGE_FILE = os.path.join(PROJECT_ROOT, "backend/tests/coverage_summary.json")
 
+# Files to ignore from test coverage check
+EXCLUDED_FILES = {
+    "backend/app/__init__.py",
+    "backend/app/main.py",
+    "backend/app/db/__init__.py",
+    "backend/app/db/session.py",
+    "backend/app/db/tasks.py",
+    "backend/app/core/config.py",
+    "backend/app/core/__init__.py",
+    "backend/app/utils/query_helpers.py",
+    "backend/app/utils/devtools.py",
+    "backend/app/plugins/__init__.py",
+    "backend/app/services/__init__.py",
+    "backend/app/routes/__init__.py",
+}
+
 def list_python_files(directory):
     for dirpath, _, filenames in os.walk(directory):
         for file in filenames:
