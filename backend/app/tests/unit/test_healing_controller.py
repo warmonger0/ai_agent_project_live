@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
 from unittest.mock import patch, mock_open
 from fastapi import FastAPI
-from backend.app.controllers import healing_controller
+from backend.app.api.v1 import api_router
 
 app = FastAPI()
-app.include_router(healing_controller.router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api/v1")
 client = TestClient(app)
 
 @patch("os.path.exists", return_value=True)
