@@ -35,4 +35,19 @@ def test_list_logs_missing_dir():
 def test_get_log_file_success(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
     log_dir.mkdir(parents=True)
-    file_path = log_dir / "test
+    file_path = log_dir / "test.log"
+    file_path.write_text("hello")
+
+    with mock.patch.object(logs, "LOG_DIR", log_dir):
+        res = client.get("/api/v1/logs/test.log")
+        assert res.status_code == 200
+        assert res.text == "hello"
+
+
+def test_get_log_file_not_found():
+    fake_path = Path("/missing_dir")
+
+    with mock.patch.object(logs, "LOG_DIR", fake_path):
+        res = client.get("/api/v1/logs/missing.log")
+        assert res.status_code == 404
+        assert "Log file not found" in res.json()["detail"]
