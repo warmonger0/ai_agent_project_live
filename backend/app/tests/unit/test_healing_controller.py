@@ -21,4 +21,8 @@ def test_get_healing_status_missing_log(mock_exists):
     assert "Healing log not found" in res.text
 
 @patch("os.path.exists", return_value=True)
-@
+@patch("builtins.open", side_effect=OSError("read failure"))
+def test_get_healing_status_read_failure(mock_file, mock_exists):
+    res = client.get("/api/v1/healing/status")
+    assert res.status_code == 500
+    assert "read failure" in res.text
