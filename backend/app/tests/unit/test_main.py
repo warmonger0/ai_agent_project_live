@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.core.config import settings
+from typing import Any  # used for plugin interface compatibility
+
 
 client = TestClient(app)
 
@@ -17,3 +19,5 @@ def test_api_router_prefix_exists():
 def test_cors_headers_present():
     response = client.options("/", headers={"Origin": "http://testclient"})
     assert "access-control-allow-origin" in response.headers
+
+@patch("backend.app.core.config.settings.vite_api_base_url", "http://localhost:5173")
