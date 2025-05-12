@@ -38,7 +38,7 @@ def test_get_log_file_success(client, tmp_path):
     test_file = tmp_path / "sample.log"
     test_file.write_text("This is a test log entry")
 
-    with mock.patch("app.routes.logs.LOG_DIR", tmp_path):
+    with mock.patch("backend.app.routes.logs.LOG_DIR", tmp_path):
         response = client.get("/api/v1/logs/sample.log")
         assert response.status_code == 200
         assert response.text == "This is a test log entry"
@@ -61,7 +61,7 @@ def test_get_log_file_read_error(client, tmp_path):
     bad_file = tmp_path / "crash.log"
     bad_file.write_text("test")
 
-    with mock.patch("app.routes.logs.LOG_DIR", tmp_path), \
+    with mock.patch("backend.app.routes.logs.LOG_DIR", tmp_path), \
          mock.patch("builtins.open", side_effect=PermissionError("Denied")):
         response = client.get("/api/v1/logs/crash.log")
         assert response.status_code == 500
