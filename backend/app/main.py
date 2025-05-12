@@ -59,7 +59,7 @@ app.add_exception_handler(Exception, error_handler.unhandled_exception_handler)
 
 # ✅ Mount API routes
 app.include_router(api_router, prefix="/api/v1")
-app.include_router(logs_controller.router)  # Mount /logs route
+app.include_router(logs_controller.router, prefix="/api/v1/logs", tags=["logs"])  # ✅ explicit and scoped
 app.include_router(project_chat_routes.router, prefix="/api/v1")  # ✅ Mount chat routes
 app.include_router(deepseek_routes.router, prefix="/api/v1", tags=["deepseek"])
 app.include_router(plugin_routes.router, prefix="/api/v1")
