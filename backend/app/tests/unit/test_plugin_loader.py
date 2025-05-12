@@ -65,6 +65,7 @@ if __name__ == "__main__":
 """
         )
 
+
 def test_plugin_discovery():
     plugins_list = plugin_loader.discover_plugins()
     names = [p["name"].lower() for p in plugins_list]
