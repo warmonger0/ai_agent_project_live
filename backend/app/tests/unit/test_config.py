@@ -6,8 +6,8 @@ from backend.app.core.config import Settings
     "APP_ENV": "test",
     "DATABASE_URL": "sqlite:///test.db",
     "FRONTEND_URL": "http://localhost:3000"
-})
-def test_settings_from_env():
+}, clear=True)
+def test_settings_from_mocked_env():
     settings = Settings()
     assert settings.app_env == "test"
     assert settings.database_url == "sqlite:///test.db"
