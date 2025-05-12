@@ -5,8 +5,6 @@ from backend.app.services.plugin_runner import run_plugin_job
 @patch("backend.app.services.plugin_runner.SessionLocal")
 @patch("backend.app.services.plugin_runner.run_plugin")
 def test_run_plugin_job_success(mock_run_plugin, mock_session):
-    # Your test code here
-
     mock_run_plugin.return_value = {"result": "ok"}
     mock_db = MagicMock()
     mock_session.return_value = mock_db
