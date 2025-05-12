@@ -25,16 +25,18 @@ def create_plugin_runner(dir_path):
             """
 import sys
 import os
-import importlib.util
+import importlib
 import json
 import traceback
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+# Add plugin dir to sys.path
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 if __name__ == "__main__":
     try:
         plugin_name = sys.argv[1]
         input_text = sys.argv[2]
+
         plugin_module = importlib.import_module(plugin_name)
 
         plugin_class = None
@@ -62,6 +64,7 @@ if __name__ == "__main__":
         print(json.dumps({"ok": False, "error": str(e), "traceback": error_info}))
 """
         )
+
 
 
 def test_plugin_discovery():
