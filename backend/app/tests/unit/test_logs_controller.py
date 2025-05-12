@@ -1,11 +1,9 @@
 from fastapi.testclient import TestClient
-from fastapi import FastAPI
-from backend.app.controllers.logs_controller import router
+from backend.app.main import app
+
 from pathlib import Path
 import os
 
-app = FastAPI()
-app.include_router(router)
 client = TestClient(app)
 
 def test_list_logs(tmp_path):
