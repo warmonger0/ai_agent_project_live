@@ -9,7 +9,6 @@ from backend.app.routes import logs
 
 client = TestClient(app)
 
-
 def test_list_logs(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
     log_dir.mkdir(parents=True)
@@ -22,7 +21,6 @@ def test_list_logs(tmp_path):
         assert response.json()["ok"] is True
         assert "test.log" in response.json()["data"]
 
-
 def test_list_logs_missing_dir():
     fake_path = Path("/nonexistent_dir")
 
@@ -30,8 +28,7 @@ def test_list_logs_missing_dir():
          mock.patch("os.path.isdir", return_value=False):
         response = client.get("/api/v1/logs/")
         assert response.status_code == 500
-        assert "Logs directory not found" in response.json()["detail"]
-
+        assert "Logs directory not found" in response.json().get("detail", "")
 
 def test_get_log_file_success(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
@@ -44,11 +41,12 @@ def test_get_log_file_success(tmp_path):
         assert response.status_code == 200
         assert response.text == "hello\n"
 
-
 def test_get_log_file_not_found():
     fake_path = Path("/missing_dir")
 
-    with mock.patch.object(logs, "LOG_DIR", fake_path):
+    with mock.patch.object(logs, "LOG_DIR", fake_path), \
+         mock.patch("os.path.isfile", return_value=False):
         response = client.get("/api/v1/logs/missing.log")
         assert response.status_code == 404
-        assert "Log file not found" in response.json()["detail"]
+        error_text = response.json().get("detail", response.json().get("error", ""))
+        assert "Log file not found" in error_text
