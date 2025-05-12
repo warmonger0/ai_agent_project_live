@@ -21,7 +21,12 @@ def test_api_router_prefix_exists():
     assert response.status_code in (200, 422, 404)  # Confirm router prefix works
 
 def test_cors_headers_present():
-    response = client.options("/", headers={"Origin": "http://testclient"})
-    assert "access-control-allow-origin" in response.headers
-
-
+    response = client.options(
+        "/",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code in (200, 204)
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
