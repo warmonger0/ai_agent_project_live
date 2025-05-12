@@ -65,6 +65,7 @@ if __name__ == "__main__":
 """
         )
 
+
 def test_plugin_discovery():
     plugins_list = plugin_loader.discover_plugins()
     names = [p["name"].lower() for p in plugins_list]
@@ -77,14 +78,22 @@ def test_run_plugin_success(temp_plugin_dir):
         temp_plugin_dir,
         "test_success",
         """
+import json
+
 class Plugin:
     def run(self, input_data):
         return "HELLO"
+
+if __name__ == "__main__":
+    plugin = Plugin()
+    result = plugin.run("test")
+    print(json.dumps({"ok": True, "result": result}))
 """
     )
     result = plugin_loader.run_plugin("test_success", '"hello"', plugin_dir=temp_plugin_dir)
     assert result["ok"] is True, f"Unexpected failure: {result}"
     assert result["result"] == "HELLO"
+
 
 def test_run_plugin_not_found(temp_plugin_dir):
     result = plugin_loader.run_plugin("missing_plugin", "hello", plugin_dir=temp_plugin_dir)
@@ -101,7 +110,7 @@ def test_run_plugin_crash(temp_plugin_dir):
 class TestCrash:
     def run(self, input_data):
         raise Exception("Crash test")
-""",
+"""
     )
     result = plugin_loader.run_plugin("test_crash", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
@@ -119,7 +128,7 @@ class TestTimeout:
         import time
         time.sleep(10)
         return "done"
-""",
+"""
     )
     result = plugin_loader.run_plugin("test_timeout", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is False
