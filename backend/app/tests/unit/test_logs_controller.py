@@ -21,15 +21,20 @@ def test_list_logs(tmp_path):
         assert response.json()["ok"] is True
         assert "test.log" in response.json()["data"]
 
-def test_list_logs_missing_dir():
-    fake_path = Path("/nonexistent_dir")
+def test_list_logs_missing_dir(monkeypatch):
+    from backend.app.routes import logs  # re-import to ensure fresh scope
 
-    with mock.patch.object(logs, "LOG_DIR", fake_path), \
-         mock.patch("os.path.isdir", return_value=False):
-        response = client.get("/api/v1/logs/")
-        print("[DEBUG]", response.json())  # Help diagnose
-        assert response.status_code == 500
-        assert "Logs directory not found" in response.json().get("detail", "")
+    fake_path = Path("/nonexistent_dir")
+    monkeypatch.setattr(logs, "LOG_DIR", fake_path)
+    monkeypatch.setattr(os.path, "isdir", lambda _: False)
+
+    test_client = TestClient(app)  # re-instantiate after monkeypatching
+
+    response = test_client.get("/api/v1/logs/")
+    print("[DEBUG]", response.json())
+    assert response.status_code == 500
+    assert "Logs directory not found" in response.json().get("detail", "")
+
 
 def test_get_log_file_success(tmp_path):
     log_dir = tmp_path / "deployments" / "logs"
