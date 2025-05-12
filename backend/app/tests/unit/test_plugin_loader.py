@@ -82,7 +82,6 @@ class Plugin:
         return "HELLO"
 """
 )
-
     result = plugin_loader.run_plugin("test_success", "hello", plugin_dir=temp_plugin_dir)
     assert result["ok"] is True
     assert result["result"] == "HELLO"
