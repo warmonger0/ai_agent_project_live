@@ -7,7 +7,7 @@ app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
 
-@patch("app.controllers.health_controller.check_ollama_health", return_value=True)
+@patch("backend.app.controllers.health_controller.check_ollama_health", return_value=True)
 def test_health_check_model_ok(mock_health):
     res = client.get("/health")
     assert res.status_code == 200
@@ -15,7 +15,7 @@ def test_health_check_model_ok(mock_health):
     assert data["backend"] == "OK"
     assert data["model"] == "OK"
 
-@patch("app.controllers.health_controller.check_ollama_health", return_value=False)
+@patch("backend.app.controllers.health_controller.check_ollama_health", return_value=False)
 def test_health_check_model_fail(mock_health):
     res = client.get("/health")
     assert res.status_code == 200
